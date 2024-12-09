@@ -19,11 +19,12 @@ Thumbs.db
 migrate_working_dir/
 
 # OS generated files
-/.linux
-/.macos
-/.windows
-/.web
-/.ios
+linux/
+macos/
+windows/
+web/
+ios/
+
 
 # System generated
 .Trashes
