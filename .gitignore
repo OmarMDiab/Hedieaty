@@ -20,9 +20,15 @@ migrate_working_dir/
 
 # OS generated files
 /.linux
+!linux/.gitignore
 /.macos
+!macos/.gitignore
 /.windows
-
+!windows/.gitignore
+/.web
+!web/.gitignore
+/.ios
+!ios/.gitignore
 
 # System generated
 .Trashes
