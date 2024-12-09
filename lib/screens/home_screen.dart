@@ -1,17 +1,20 @@
 import 'package:flutter/material.dart';
 import '../models/user_model.dart';
+import 'profile_screen.dart';
+import 'notification_screen.dart';
+import 'settings_screen.dart';
 import 'login_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   final UserModel userModel;
 
-  const HomeScreen({required this.userModel});
+  const HomeScreen({super.key, required this.userModel});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Welcome, ${userModel.name}!"),
+        title: Text("Welcome, ${userModel.phoneNumber}!"),
         backgroundColor: Colors.deepPurple[100],
         elevation: 200,
         actions: [
@@ -19,7 +22,7 @@ class HomeScreen extends StatelessWidget {
             context,
             MaterialPageRoute(builder: (context) => LoginScreen()),
           ), icon: const Icon(Icons.logout_rounded),
-            tooltip: 'Comment Icon',
+            tooltip: 'Logout', // for user to know
 
           )
         ],
@@ -39,7 +42,10 @@ class HomeScreen extends StatelessWidget {
               title: const Text("P R O F I L E"),
               onTap: (){
                 Navigator.pop(context);
-                Navigator.pushNamed(context, '/profile');
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => profileScreen(userModel: userModel)),
+                );
               },
             ),
 
@@ -48,7 +54,10 @@ class HomeScreen extends StatelessWidget {
               title: const Text("N O T I F I C A T I O N S"),
               onTap: (){
                 Navigator.pop(context);
-                Navigator.pushNamed(context, '/notifications');
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => NotificationScreen(userModel: userModel)),
+                );
               },
             ),
 
@@ -58,7 +67,10 @@ class HomeScreen extends StatelessWidget {
               title: const Text("S E T T I N G S"),
               onTap: (){
                 Navigator.pop(context);
-                Navigator.pushNamed(context, '/settings');
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => SettingsScreen(userModel: userModel)),
+                );
               },
             ),
           ],

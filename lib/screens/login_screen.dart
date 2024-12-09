@@ -8,6 +8,8 @@ class LoginScreen extends StatelessWidget {
   final TextEditingController passwordController = TextEditingController();
   final AuthController _authController = AuthController();
 
+  LoginScreen({super.key});
+
   void _login(BuildContext context) async {
     try {
       final userModel = await _authController.login(
@@ -18,7 +20,8 @@ class LoginScreen extends StatelessWidget {
       if (userModel != null) {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => HomeScreen(userModel: userModel)),
+          MaterialPageRoute(
+              builder: (context) => HomeScreen(userModel: userModel)),
         );
       }
     } catch (e) {
@@ -36,10 +39,16 @@ class LoginScreen extends StatelessWidget {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            TextField(controller: emailController, decoration: const InputDecoration(labelText: 'Email')),
-            TextField(controller: passwordController, decoration: const InputDecoration(labelText: 'Password'), obscureText: true),
+            TextField(
+                controller: emailController,
+                decoration: const InputDecoration(labelText: 'Email')),
+            TextField(
+                controller: passwordController,
+                decoration: const InputDecoration(labelText: 'Password'),
+                obscureText: true),
             const SizedBox(height: 20),
-            ElevatedButton(onPressed: () => _login(context), child: const Text('Login')),
+            ElevatedButton(
+                onPressed: () => _login(context), child: const Text('Login')),
             TextButton(
               onPressed: () => Navigator.push(
                 context,
