@@ -4,40 +4,119 @@
 *.pyc
 *.swp
 .DS_Store
-.atom/
-.buildlog/
-.history
-.svn/
+*.tmp
+*.temp
+*.bak
+*.orig
+*.rej
+*.so
+*.dll
+*.exe
+*.out
+*.idb
+*.pdb
+Thumbs.db
 migrate_working_dir/
 
-# IntelliJ related
+# System generated
+.Trashes
+Desktop.ini
+Icon?
+ehthumbs.db
+.env
+
+# macOS
+.AppleDouble
+.LSOverride
+
+# Windows
+*.lnk
+
+# IDEs and Editors
+*.idea/
 *.iml
 *.ipr
 *.iws
+.vscode/
+*.sublime-project
+*.sublime-workspace
+
+# Eclipse
+.metadata/
+.classpath
+.project
+.cproject
+.settings/
+
+# IntelliJ
+*.iml
 .idea/
+.idea_modules/
 
-# The .vscode folder contains launch configuration and tasks you configure in
-# VS Code which you may wish to be included in version control, so this line
-# is commented out by default.
-#.vscode/
+# Android/Flutter specific
+android/.gradle/
+android/app/debug/
+android/app/profile/
+android/app/release/
+android/build/
+**/build/
 
-# Flutter/Dart/Pub related
-**/doc/api/
-**/ios/Flutter/.last_build_id
+# Dart/Flutter specific
 .dart_tool/
 .flutter-plugins
 .flutter-plugins-dependencies
+.packages
 .pub-cache/
 .pub/
-/build/
+/doc/api/
 
-# Symbolication related
-app.*.symbols
+# Node.js related (if you use Node for tools/scripts)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Coverage and Reports
+coverage/
+*.lcov
+*.lcov.info
+
+# Temporary files
+*.tmp
+*.temp
+*.log
+*.gz
+*.zip
+*.tar
+*.tgz
+*.rar
+*.7z
+
+# Images
+*.png
+*.jpg
+*.jpeg
+*.bmp
+*.gif
+*.ico
+*.svg
+
+# Archives
+*.tar
+*.zip
+*.gz
+*.rar
+*.7z
+
+# Ignore compiled libraries
+*.dll
+*.so
+*.dylib
 
 # Obfuscation related
+app.*.symbols
 app.*.map.json
 
-# Android Studio will place build artifacts here
-/android/app/debug
-/android/app/profile
-/android/app/release
+# Firebase
+google-services.json
+.firebase/

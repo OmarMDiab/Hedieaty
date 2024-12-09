@@ -136,7 +136,7 @@ class UserModel {
 
       final storageRef =
           FirebaseStorage.instance.ref().child('profile_pics/$id.jpg');
-      final uploadTask = await storageRef.putFile(profileImage!);
+      final uploadTask = await storageRef.putFile(profileImage);
       final imageurl = uploadTask.ref.getDownloadURL();
       await _firestore.collection('users').doc(id).update({
         'profilePic': imageurl,
