@@ -18,6 +18,12 @@
 Thumbs.db
 migrate_working_dir/
 
+# OS generated files
+/.linux
+/.macos
+/.windows
+
+
 # System generated
 .Trashes
 Desktop.ini
@@ -92,14 +98,6 @@ coverage/
 *.rar
 *.7z
 
-# Images
-*.png
-*.jpg
-*.jpeg
-*.bmp
-*.gif
-*.ico
-*.svg
 
 # Archives
 *.tar
