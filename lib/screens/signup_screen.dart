@@ -1,10 +1,8 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:hedieaty/screens/login_screen.dart';
 import '../controllers/auth_controller.dart';
 import 'home_screen.dart';
-import 'package:image_picker/image_picker.dart';
+import 'package:hedieaty/widgets/CustomTextField.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -20,26 +18,31 @@ class _SignupScreenState extends State<SignupScreen> {
   final TextEditingController phoneNumberController = TextEditingController();
   final AuthController _authController = AuthController();
 
-  File? _profileImage;
+  int _selectedImageIndex = 0;
 
-  Future<void> _pickImage() async {
-    final pickedImage =
-        await ImagePicker().pickImage(source: ImageSource.gallery);
-    if (pickedImage != null) {
-      setState(() {
-        _profileImage = File(pickedImage.path);
-      });
-    }
+  // List of asset paths for profile images
+  final List<String> _profileImages = List.generate(
+    5,
+    (index) => 'assets/images/Profilepfp/pfp${index + 1}.png',
+  );
+
+  void _selectImage(int index) {
+    setState(() {
+      _selectedImageIndex = index;
+    });
   }
 
   void _signUp(BuildContext context) async {
     try {
+      // Get the selected image asset path
+      final selectedImagePath = _profileImages[_selectedImageIndex];
+
       final userModel = await _authController.signUp(
         emailController.text,
         passwordController.text,
         nameController.text,
         phoneNumberController.text,
-        _profileImage,
+        selectedImagePath, // Pass the asset path
       );
 
       if (userModel != null) {
@@ -59,47 +62,126 @@ class _SignupScreenState extends State<SignupScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Sign Up')),
+      appBar: AppBar(
+        backgroundColor: Colors.deepPurpleAccent,
+        title: const Text('Create Account',
+            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+        elevation: 0,
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: SingleChildScrollView(
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              GestureDetector(
-                onTap: _pickImage,
-                child: CircleAvatar(
-                  radius: 50,
-                  backgroundImage:
-                      _profileImage != null ? FileImage(_profileImage!) : null,
-                  child: _profileImage == null
-                      ? const Icon(Icons.add_a_photo, size: 50)
-                      : null,
+              // Title and Subtitle
+              const Text('Join Hedieaty! 🎁',
+                  style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.deepPurple)),
+
+              const SizedBox(height: 20),
+
+              // Profile Image Selector
+              const Text('Select Profile Picture',
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold, color: Colors.deepPurple)),
+              const SizedBox(height: 10),
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: _profileImages.asMap().entries.map((entry) {
+                    final index = entry.key;
+                    final imagePath = entry.value;
+                    return GestureDetector(
+                      onTap: () => _selectImage(index),
+                      child: Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 8.0),
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                            color: _selectedImageIndex == index
+                                ? Colors.blueAccent
+                                : Colors.transparent,
+                            width: 2,
+                          ),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: Image.asset(
+                            imagePath,
+                            width: 100,
+                            height: 100,
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                      ),
+                    );
+                  }).toList(),
                 ),
               ),
-              const SizedBox(height: 20),
-              TextField(
-                  controller: emailController,
-                  decoration: const InputDecoration(labelText: 'Email')),
-              TextField(
-                  controller: nameController,
-                  decoration: const InputDecoration(labelText: 'Name')),
-              TextField(
-                  controller: phoneNumberController,
-                  decoration: const InputDecoration(labelText: 'Phone Number')),
-              TextField(
+              const SizedBox(height: 30),
+
+              // Email TextField
+              CustomTextField(
+                controller: emailController,
+                labelText: 'Email',
+                icon: Icons.email,
+              ),
+
+              // Name TextField
+              CustomTextField(
+                controller: nameController,
+                labelText: 'Name',
+                icon: Icons.person,
+              ),
+
+              // Phone Number TextField
+              CustomTextField(
+                controller: phoneNumberController,
+                labelText: 'Phone Number',
+                icon: Icons.phone,
+              ),
+
+              // Password TextField
+              CustomTextField(
                   controller: passwordController,
-                  decoration: const InputDecoration(labelText: 'Password'),
+                  labelText: 'Password',
+                  icon: Icons.lock,
                   obscureText: true),
-              const SizedBox(height: 20),
+
+              const SizedBox(height: 30),
+
+              // Sign Up Button
               ElevatedButton(
-                  onPressed: () => _signUp(context),
-                  child: const Text('Sign Up')),
-              TextButton(
-                onPressed: () => Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (context) => LoginScreen()),
+                onPressed: () => _signUp(context),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.deepPurpleAccent,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30)),
+                  minimumSize: const Size(double.infinity, 50),
                 ),
-                child: const Text('Already have account? Login'),
+                child: const Text('Signup',
+                    style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white)),
+              ),
+
+              const SizedBox(height: 20),
+
+              // Already have an account
+              Center(
+                child: TextButton(
+                  onPressed: () => Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (context) => LoginScreen()),
+                  ),
+                  child: const Text('Already have an account? Login',
+                      style: TextStyle(color: Colors.deepPurple)),
+                ),
               ),
             ],
           ),

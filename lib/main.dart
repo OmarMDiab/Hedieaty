@@ -8,7 +8,7 @@ Future<void> main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  runApp(MyApp());
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
@@ -21,8 +21,8 @@ class MyApp extends StatelessWidget {
       title: 'Gift App',
       theme: ThemeData(
           primarySwatch: Colors.blue,
-          appBarTheme:
-              AppBarTheme(color: Colors.deepPurple[100], elevation: 30)),
+          appBarTheme: const AppBarTheme(
+              backgroundColor: Colors.deepPurpleAccent, elevation: 30)),
       //theme: ThemeData(primarySwatch: Colors.blue),
       home: LoginScreen(),
     );
