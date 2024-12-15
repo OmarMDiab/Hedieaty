@@ -13,7 +13,7 @@ class NotificationScreen extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Colors.deepPurpleAccent,
         title: const Center(
-          child: const Text('Welcome to Hedieaty! 🎁',
+          child: Text('Welcome to Hedieaty! 🎁',
               style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,

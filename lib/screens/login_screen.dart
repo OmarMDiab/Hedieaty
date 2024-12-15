@@ -35,16 +35,27 @@ class LoginScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.deepPurpleAccent,
-        title: const Center(
-          child: const Text('Welcome to Hedieaty! 🎁',
-              style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white)),
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(60.0),
+        child: ClipRRect(
+          borderRadius: const BorderRadius.only(
+            bottomLeft: Radius.circular(20),
+            bottomRight: Radius.circular(20),
+            topLeft: Radius.circular(20),
+            topRight: Radius.circular(20),
+          ),
+          child: AppBar(
+            backgroundColor: const Color.fromARGB(255, 67, 25, 184),
+            title: const Center(
+              child: Text('Welcome to Hedieaty! 🎁',
+                  style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white)),
+            ),
+            elevation: 0,
+          ),
         ),
-        elevation: 0,
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),

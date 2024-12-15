@@ -8,6 +8,8 @@ class UserModel {
   final String name;
   final String email;
   final String phoneNumber;
+  final int numberOfEvents;
+  final List<String> friends;
   final List<String> preferences;
 
   // Default constructor with optional parameters
@@ -17,6 +19,8 @@ class UserModel {
     this.name = '',
     this.email = '',
     this.phoneNumber = '',
+    this.friends = const [],
+    this.numberOfEvents = 0,
     this.preferences = const [],
   });
 
@@ -35,6 +39,7 @@ class UserModel {
         'name': name,
         'email': email,
         'phoneNumber': phoneNumber,
+        'friends': [],
         'preferences': preferences,
       });
     } catch (e) {
@@ -45,16 +50,26 @@ class UserModel {
   Future<UserModel?> fetchUser(String id) async {
     try {
       final doc = await _firestore.collection('users').doc(id).get();
+
       if (doc.exists) {
-        //return doc.data();
-        var data = doc.data();
+        // for friends cards
+        final eventdoc = await _firestore
+            .collection('events')
+            .where('userID', isEqualTo: id)
+            .where('date', isGreaterThan: Timestamp.fromDate(DateTime.now()))
+            .get();
+
+        final numberOfEvents = eventdoc.docs.length; // get numeber of events
+        var userData = doc.data();
         return UserModel(
           id: id,
-          pfp: data?['pfp'],
-          name: data?['name'],
-          email: data?['email'],
-          phoneNumber: data?['phoneNumber'],
-          preferences: List<String>.from(data?['preferences']),
+          pfp: userData?['pfp'],
+          name: userData?['name'],
+          email: userData?['email'],
+          phoneNumber: userData?['phoneNumber'],
+          numberOfEvents: numberOfEvents,
+          friends: List<String>.from(userData?['friends'] ?? []),
+          preferences: List<String>.from(userData?['preferences'] ?? []),
         );
       }
       return null;
@@ -63,22 +78,60 @@ class UserModel {
     }
   }
 
-  Future<void> addFriend({
+  Future<bool> addFriend({
     required String userID,
-    required String friendID,
+    required String phoneNumber,
   }) async {
+    String? friendID;
     try {
-      await _firestore.collection('friends').doc(userID).update({
-        'friends': FieldValue.arrayUnion([friendID]),
-      });
-    } catch (e) {
-      if (e is FirebaseException && e.code == 'not-found') {
-        await _firestore.collection('friends').doc(userID).set({
-          'friends': [friendID],
+      // Fetch the user with the given phone number
+      final querySnapshot = await _firestore
+          .collection('users')
+          .where('phoneNumber', isEqualTo: phoneNumber)
+          .get();
+
+      if (querySnapshot.docs.isEmpty) {
+        return false;
+      }
+
+      // >>> phone numbers are unique and we get only one document
+      friendID = querySnapshot.docs.first.id;
+
+      final docRef = _firestore.collection('users').doc(userID);
+      final doc = await docRef.get();
+      if (doc.exists) {
+        await docRef.update({
+          'friends': FieldValue.arrayUnion([friendID]),
         });
       } else {
-        throw Exception('Error adding Friend: $e');
+        await docRef.set({
+          'friends': [friendID],
+        });
       }
+      return true;
+    } catch (e) {
+      throw Exception('Error adding Friend: $e');
+    }
+  }
+
+  Future<List<UserModel>> fetchUserFriends(String id) async {
+    try {
+      final doc = await _firestore.collection('users').doc(id).get();
+      if (doc.exists) {
+        var data = doc.data();
+        final friends = List<String>.from(data?['friends'] ?? []);
+        List<UserModel> userFriends = [];
+        for (var friendID in friends) {
+          final friend = await fetchUser(friendID);
+          if (friend != null) {
+            userFriends.add(friend);
+          }
+        }
+        return userFriends;
+      }
+      return [];
+    } catch (e) {
+      throw Exception('Error fetching user friends: $e');
     }
   }
 }

@@ -22,7 +22,11 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
           primarySwatch: Colors.blue,
           appBarTheme: const AppBarTheme(
-              backgroundColor: Colors.deepPurpleAccent, elevation: 30)),
+              iconTheme: IconThemeData(
+                color: Colors.white, // Set back button color to white globally
+              ),
+              backgroundColor: const Color.fromARGB(255, 67, 25, 184),
+              elevation: 30)),
       //theme: ThemeData(primarySwatch: Colors.blue),
       home: LoginScreen(),
     );

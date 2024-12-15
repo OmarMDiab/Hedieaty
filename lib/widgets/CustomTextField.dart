@@ -5,19 +5,21 @@ class CustomTextField extends StatelessWidget {
   final String labelText;
   final IconData icon;
   final bool obscureText;
+  final EdgeInsetsGeometry padding;
 
   const CustomTextField({
-    Key? key,
+    super.key,
     required this.controller,
     required this.labelText,
     required this.icon,
     this.obscureText = false,
-  }) : super(key: key);
+    this.padding = const EdgeInsets.only(bottom: 20.0),
+  });
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 20.0),
+      padding: padding,
       child: TextField(
         controller: controller,
         obscureText: obscureText,

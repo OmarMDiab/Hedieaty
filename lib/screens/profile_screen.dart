@@ -13,7 +13,7 @@ class ProfileScreen extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Colors.deepPurpleAccent,
         title: Text("${userModel.name} profile",
-            style: TextStyle(
+            style: const TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
                 color: Colors.white)),
@@ -24,7 +24,7 @@ class ProfileScreen extends StatelessWidget {
         child: Column(
           children: [
             CircleAvatar(
-              radius: 50,
+              radius: 80,
               backgroundImage: AssetImage(userModel.pfp),
             ),
             const SizedBox(height: 16),
@@ -34,11 +34,12 @@ class ProfileScreen extends StatelessWidget {
                 borderRadius: BorderRadius.circular(10),
               ),
               child: ListTile(
-                leading: Icon(Icons.person, color: Colors.deepPurpleAccent),
+                leading:
+                    const Icon(Icons.person, color: Colors.deepPurpleAccent),
                 title: Text(userModel.name,
-                    style:
-                        TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                subtitle: Text("Name"),
+                    style: const TextStyle(
+                        fontSize: 18, fontWeight: FontWeight.bold)),
+                subtitle: const Text("Name"),
               ),
             ),
             const SizedBox(height: 8),
@@ -48,11 +49,12 @@ class ProfileScreen extends StatelessWidget {
                 borderRadius: BorderRadius.circular(10),
               ),
               child: ListTile(
-                leading: Icon(Icons.email, color: Colors.deepPurpleAccent),
+                leading:
+                    const Icon(Icons.email, color: Colors.deepPurpleAccent),
                 title: Text(userModel.email,
-                    style:
-                        TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                subtitle: Text("Email"),
+                    style: const TextStyle(
+                        fontSize: 18, fontWeight: FontWeight.bold)),
+                subtitle: const Text("Email"),
               ),
             ),
             const SizedBox(height: 8),
@@ -62,11 +64,12 @@ class ProfileScreen extends StatelessWidget {
                 borderRadius: BorderRadius.circular(10),
               ),
               child: ListTile(
-                leading: Icon(Icons.phone, color: Colors.deepPurpleAccent),
+                leading:
+                    const Icon(Icons.phone, color: Colors.deepPurpleAccent),
                 title: Text(userModel.phoneNumber,
-                    style:
-                        TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                subtitle: Text("Phone Number"),
+                    style: const TextStyle(
+                        fontSize: 18, fontWeight: FontWeight.bold)),
+                subtitle: const Text("Phone Number"),
               ),
             ),
             const SizedBox(height: 40),
@@ -77,14 +80,15 @@ class ProfileScreen extends StatelessWidget {
                   MaterialPageRoute(builder: (context) => LoginScreen()),
                 );
               },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.deepPurpleAccent,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                textStyle: const TextStyle(fontSize: 18),
+              ),
               child: const Text(
                 "Logout",
                 style: TextStyle(color: Colors.white),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.deepPurpleAccent,
-                padding: EdgeInsets.symmetric(horizontal: 32, vertical: 12),
-                textStyle: TextStyle(fontSize: 18),
               ),
             ),
           ],

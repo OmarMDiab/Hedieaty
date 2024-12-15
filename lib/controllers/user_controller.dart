@@ -29,4 +29,25 @@ class UserController {
     }
     return null;
   }
+
+  // add friends
+  Future<bool> addFriend(String id, String phoneNumber) async {
+    try {
+      final status =
+          await _userModel.addFriend(userID: id, phoneNumber: phoneNumber);
+      return status;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // fetch all user friends
+  Future<List<UserModel>> getFriends(String id) async {
+    try {
+      final friends = await _userModel.fetchUserFriends(id);
+      return friends;
+    } catch (e) {
+      throw Exception('Error fetching user friends: $e');
+    }
+  }
 }
