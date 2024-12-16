@@ -8,7 +8,7 @@ import '../models/user_model.dart';
 class EventScreen extends StatefulWidget {
   final UserModel userModel;
 
-  const EventScreen({Key? key, required this.userModel}) : super(key: key);
+  const EventScreen({super.key, required this.userModel});
 
   @override
   _EventScreenState createState() => _EventScreenState();

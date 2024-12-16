@@ -18,6 +18,23 @@ class UserController {
     }
   }
 
+  // update user
+  Future<void> updateUserProfile(UserModel user) async {
+    try {
+      await _userModel.updateUser(
+        id: user.id,
+        pfp: user.pfp,
+        name: user.name,
+        email: user.email,
+        phoneNumber: user.phoneNumber,
+        preferences: user.preferences,
+      );
+      //return fetchUser(user.id);
+    } catch (e) {
+      throw Exception('Error updating user: $e');
+    }
+  }
+
   Future<UserModel?> fetchUser(String id) async {
     try {
       final user = await _userModel.fetchUser(id);

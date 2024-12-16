@@ -3,15 +3,15 @@ import 'package:hedieaty/models/event_model.dart';
 
 class EventCard extends StatelessWidget {
   final EventModel event;
-  final VoidCallback onEdit;
-  final VoidCallback onDelete;
+  final VoidCallback? onEdit;
+  final VoidCallback? onDelete;
 
   const EventCard({
-    Key? key,
+    super.key,
     required this.event,
-    required this.onEdit,
-    required this.onDelete,
-  }) : super(key: key);
+    this.onEdit,
+    this.onDelete,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -89,19 +89,20 @@ class EventCard extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             // Edit and Delete Buttons
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.edit, color: Colors.blue),
-                  onPressed: onEdit,
-                ),
-                IconButton(
-                  icon: const Icon(Icons.delete, color: Colors.red),
-                  onPressed: onDelete,
-                ),
-              ],
-            ),
+            if (onEdit != null || onDelete != null)
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.edit, color: Colors.blue),
+                    onPressed: onEdit,
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.delete, color: Colors.red),
+                    onPressed: onDelete,
+                  ),
+                ],
+              ),
           ],
         ),
       ),

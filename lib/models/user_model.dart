@@ -47,6 +47,47 @@ class UserModel {
     }
   }
 
+  // update user
+  Future<void> updateUser({
+    required String id,
+    String? pfp,
+    String? name,
+    String? email,
+    String? phoneNumber,
+    List<String>? preferences,
+  }) async {
+    try {
+      Map<String, dynamic> updateData = {};
+      if (pfp != null) updateData['pfp'] = pfp;
+      if (name != null) updateData['name'] = name;
+      if (email != null) updateData['email'] = email;
+      if (phoneNumber != null) updateData['phoneNumber'] = phoneNumber;
+      if (preferences != null) updateData['preferences'] = preferences;
+
+      await _firestore.collection('users').doc(id).update(updateData);
+    } catch (e) {
+      throw Exception('Error updating user: $e');
+    }
+  }
+
+  UserModel copyWith({
+    String? name,
+    String? email,
+    String? phoneNumber,
+    String? pfp,
+    //preferences
+    List<String>? preferences,
+  }) {
+    return UserModel(
+      id: id, // Keep ID the same as it's usually immutable
+      name: name ?? this.name,
+      email: email ?? this.email,
+      phoneNumber: phoneNumber ?? this.phoneNumber,
+      pfp: pfp ?? this.pfp,
+      preferences: preferences ?? this.preferences,
+    );
+  }
+
   Future<UserModel?> fetchUser(String id) async {
     try {
       final doc = await _firestore.collection('users').doc(id).get();
@@ -97,17 +138,32 @@ class UserModel {
       // >>> phone numbers are unique and we get only one document
       friendID = querySnapshot.docs.first.id;
 
-      final docRef = _firestore.collection('users').doc(userID);
-      final doc = await docRef.get();
-      if (doc.exists) {
-        await docRef.update({
+      final userDocRef = _firestore.collection('users').doc(userID);
+      final friendDocRef = _firestore.collection('users').doc(friendID);
+
+      final userDoc = await userDocRef.get();
+      final friendDoc = await friendDocRef.get();
+
+      if (userDoc.exists) {
+        await userDocRef.update({
           'friends': FieldValue.arrayUnion([friendID]),
         });
       } else {
-        await docRef.set({
+        await userDocRef.set({
           'friends': [friendID],
         });
       }
+
+      if (friendDoc.exists) {
+        await friendDocRef.update({
+          'friends': FieldValue.arrayUnion([userID]),
+        });
+      } else {
+        await friendDocRef.set({
+          'friends': [userID],
+        });
+      }
+
       return true;
     } catch (e) {
       throw Exception('Error adding Friend: $e');

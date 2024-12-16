@@ -1,22 +1,31 @@
 import 'package:flutter/material.dart';
 import 'package:hedieaty/screens/login_screen.dart';
+import 'package:hedieaty/screens/profile_screen.dart';
 import '../controllers/auth_controller.dart';
 import 'home_screen.dart';
+import 'package:hedieaty/models/user_model.dart';
 import 'package:hedieaty/widgets/CustomTextField.dart';
+import 'package:hedieaty/controllers/user_controller.dart';
 
 class SignupScreen extends StatefulWidget {
-  const SignupScreen({super.key});
+  final bool isEditMode;
+  final UserModel? userModel;
+
+  const SignupScreen({super.key, this.isEditMode = false, this.userModel});
 
   @override
   _SignupScreenState createState() => _SignupScreenState();
 }
 
 class _SignupScreenState extends State<SignupScreen> {
-  final TextEditingController nameController = TextEditingController();
-  final TextEditingController emailController = TextEditingController();
-  final TextEditingController passwordController = TextEditingController();
-  final TextEditingController phoneNumberController = TextEditingController();
+  late TextEditingController nameController;
+  late TextEditingController emailController;
+  late TextEditingController passwordController;
+  late TextEditingController phoneNumberController;
   final AuthController _authController = AuthController();
+  final UserController _userController = UserController();
+  List<String> preferences = [];
+  late TextEditingController preferencesController = TextEditingController();
 
   int _selectedImageIndex = 0;
 
@@ -26,31 +35,82 @@ class _SignupScreenState extends State<SignupScreen> {
     (index) => 'assets/images/Profilepfp/pfp${index + 1}.png',
   );
 
+  @override
+  void initState() {
+    super.initState();
+
+    // Initialize controllers with existing data if in edit mode
+    nameController = TextEditingController(
+        text: widget.isEditMode ? widget.userModel?.name : '');
+    emailController = TextEditingController(
+        text: widget.isEditMode ? widget.userModel?.email : '');
+    passwordController = TextEditingController(); // Password should not prefill
+    phoneNumberController = TextEditingController(
+        text: widget.isEditMode ? widget.userModel?.phoneNumber : '');
+
+    preferences = widget.isEditMode ? widget.userModel?.preferences ?? [] : [];
+
+    // Preselect the user's profile picture if in edit mode
+    if (widget.isEditMode && widget.userModel != null) {
+      _selectedImageIndex = _profileImages.indexOf(widget.userModel!.pfp);
+    }
+  }
+
   void _selectImage(int index) {
     setState(() {
       _selectedImageIndex = index;
     });
   }
 
-  void _signUp(BuildContext context) async {
+  void _submit(BuildContext context) async {
     try {
-      // Get the selected image asset path
       final selectedImagePath = _profileImages[_selectedImageIndex];
 
-      final userModel = await _authController.signUp(
-        emailController.text,
-        passwordController.text,
-        nameController.text,
-        phoneNumberController.text,
-        selectedImagePath, // Pass the asset path
-      );
+      if (widget.isEditMode && widget.userModel != null) {
+        // Edit profile logic
+        var updatedUser = widget.userModel!.copyWith(
+          name: nameController.text,
+          email: emailController.text,
+          phoneNumber: phoneNumberController.text,
+          pfp: selectedImagePath,
+          preferences: preferences,
+        );
 
-      if (userModel != null) {
+        await _userController.updateUserProfile(updatedUser);
+        // Navigator.pop(context, updatedUserResult);
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-              builder: (context) => HomeScreen(userModel: userModel)),
+              builder: (context) => HomeScreen(userModel: updatedUser)),
         );
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+              builder: (context) => ProfileScreen(userModel: updatedUser)),
+        );
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Profile updated successfully!'),
+            backgroundColor: Color.fromARGB(255, 149, 71, 238),
+          ),
+        );
+      } else {
+        // Sign up logic
+        final userModel = await _authController.signUp(
+            emailController.text,
+            passwordController.text,
+            nameController.text,
+            phoneNumberController.text,
+            selectedImagePath,
+            preferences);
+
+        if (userModel != null) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+                builder: (context) => HomeScreen(userModel: userModel)),
+          );
+        }
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -64,8 +124,9 @@ class _SignupScreenState extends State<SignupScreen> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.deepPurpleAccent,
-        title: const Text('Create Account',
-            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+        title: Text(widget.isEditMode ? 'Edit Profile' : 'Create Account',
+            style: const TextStyle(
+                fontWeight: FontWeight.bold, color: Colors.white)),
         elevation: 0,
       ),
       body: Padding(
@@ -75,11 +136,13 @@ class _SignupScreenState extends State<SignupScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Title and Subtitle
-              const Text('Join Hedieaty! 🎁',
-                  style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.deepPurple)),
+              Text(
+                widget.isEditMode ? 'Update Your Details' : 'Join Hedieaty! 🎁',
+                style: const TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.deepPurple),
+              ),
 
               const SizedBox(height: 20),
 
@@ -124,38 +187,78 @@ class _SignupScreenState extends State<SignupScreen> {
               const SizedBox(height: 30),
 
               // Email TextField
-              CustomTextField(
-                controller: emailController,
-                labelText: 'Email',
-                icon: Icons.email,
-              ),
+              if (!widget.isEditMode)
+                CustomTextField(
+                  controller: emailController,
+                  labelText: widget.isEditMode ? 'Edit Email' : 'Email',
+                  icon: Icons.email,
+                ),
 
               // Name TextField
               CustomTextField(
                 controller: nameController,
-                labelText: 'Name',
+                labelText: widget.isEditMode ? 'Edit Name' : 'Name',
                 icon: Icons.person,
               ),
 
               // Phone Number TextField
               CustomTextField(
                 controller: phoneNumberController,
-                labelText: 'Phone Number',
+                labelText:
+                    widget.isEditMode ? 'Edit Phone Number' : 'Phone Number',
                 icon: Icons.phone,
               ),
 
-              // Password TextField
+              // Preferences TextField
               CustomTextField(
-                  controller: passwordController,
-                  labelText: 'Password',
-                  icon: Icons.lock,
-                  obscureText: true),
+                controller: preferencesController,
+                labelText:
+                    widget.isEditMode ? 'Edit Preferences' : 'Preferences',
+                icon: Icons.favorite,
+              ),
+
+              // Add a button to add preferences
+              ElevatedButton(
+                onPressed: () {
+                  setState(() {
+                    preferences.add(preferencesController.text);
+                    preferencesController.clear();
+                  });
+                },
+                child: const Text('Add Preference'),
+              ),
+
+              // Display the list of preferences
+              Wrap(
+                spacing: 8.0,
+                children: preferences.map((preference) {
+                  return Chip(
+                    label: Text(preference),
+                    backgroundColor: Colors.deepPurpleAccent,
+                    labelStyle: const TextStyle(color: Colors.white),
+                    onDeleted: () {
+                      setState(() {
+                        preferences.remove(preference);
+                      });
+                    },
+                    deleteIconColor: Colors.white,
+                  );
+                }).toList(),
+              ),
+
+              // Password TextField (only for signup)
+              if (!widget.isEditMode)
+                CustomTextField(
+                    controller: passwordController,
+                    labelText: 'Password',
+                    icon: Icons.lock,
+                    obscureText: true),
 
               const SizedBox(height: 30),
 
-              // Sign Up Button
+              // Submit Button
               ElevatedButton(
-                onPressed: () => _signUp(context),
+                onPressed: () => _submit(context),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.deepPurpleAccent,
                   padding: const EdgeInsets.symmetric(vertical: 14),
@@ -163,8 +266,8 @@ class _SignupScreenState extends State<SignupScreen> {
                       borderRadius: BorderRadius.circular(30)),
                   minimumSize: const Size(double.infinity, 50),
                 ),
-                child: const Text('Signup',
-                    style: TextStyle(
+                child: Text(widget.isEditMode ? 'Save Changes' : 'Signup',
+                    style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                         color: Colors.white)),
@@ -172,17 +275,18 @@ class _SignupScreenState extends State<SignupScreen> {
 
               const SizedBox(height: 20),
 
-              // Already have an account
-              Center(
-                child: TextButton(
-                  onPressed: () => Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(builder: (context) => LoginScreen()),
+              // Already have an account (only for signup)
+              if (!widget.isEditMode)
+                Center(
+                  child: TextButton(
+                    onPressed: () => Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(builder: (context) => LoginScreen()),
+                    ),
+                    child: const Text('Already have an account? Login',
+                        style: TextStyle(color: Colors.deepPurple)),
                   ),
-                  child: const Text('Already have an account? Login',
-                      style: TextStyle(color: Colors.deepPurple)),
                 ),
-              ),
             ],
           ),
         ),

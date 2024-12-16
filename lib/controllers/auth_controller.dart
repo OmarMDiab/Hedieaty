@@ -7,7 +7,7 @@ class AuthController {
   final UserController _userController = UserController();
 
   Future<UserModel?> signUp(String email, String password, String name,
-      String phoneNumber, String profileImage) async {
+      String phoneNumber, String profileImage, List<String> preferences) async {
     try {
       final userCredential = await _auth.createUserWithEmailAndPassword(
         email: email,
@@ -23,7 +23,7 @@ class AuthController {
           name: name,
           email: email,
           phoneNumber: phoneNumber,
-          preferences: ['Books', 'Gadgets', 'Clothing'],
+          preferences: preferences,
         );
         await _userController.saveUser(userModel);
 

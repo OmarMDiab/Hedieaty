@@ -30,7 +30,9 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
     'Birthday',
     'Wedding',
     'Party',
-    'Anniversary'
+    'Anniversary',
+    'Graduation',
+    'Holiday',
   ];
 
   @override

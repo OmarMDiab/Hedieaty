@@ -11,7 +11,7 @@ import 'package:hedieaty/widgets/friendCard.dart';
 class HomeScreen extends StatefulWidget {
   final UserModel userModel;
 
-  HomeScreen({super.key, required this.userModel});
+  const HomeScreen({super.key, required this.userModel});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -138,7 +138,18 @@ class _HomeScreenState extends State<HomeScreen> {
                       itemCount: snapshot.data!.length,
                       itemBuilder: (context, index) {
                         UserModel friend = snapshot.data![index];
-                        return FriendCard(friend: friend);
+                        return GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    ProfileScreen(userModel: friend),
+                              ),
+                            );
+                          },
+                          child: FriendCard(friend: friend),
+                        );
                       },
                     ),
                   );
@@ -147,7 +158,6 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
 
-          // Floating Action Button for Search
           Positioned(
             top: 16,
             right: 16,
