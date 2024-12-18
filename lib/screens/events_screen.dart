@@ -2,13 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:hedieaty/controllers/event_controller.dart';
 import 'package:hedieaty/models/event_model.dart';
 import 'package:hedieaty/screens/create_event_screen.dart';
+import 'package:hedieaty/screens/gifts_screen.dart';
 import 'package:hedieaty/widgets/eventCard.dart';
 import '../models/user_model.dart';
 
 class EventScreen extends StatefulWidget {
   final UserModel userModel;
+  final bool isOwner;
 
-  const EventScreen({super.key, required this.userModel});
+  const EventScreen({super.key, required this.userModel, this.isOwner = true});
 
   @override
   _EventScreenState createState() => _EventScreenState();
@@ -31,21 +33,23 @@ class _EventScreenState extends State<EventScreen> {
           ),
         ),
         actions: [
-          IconButton(
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) =>
-                    CreateEventScreen(userModel: widget.userModel),
+          if (widget.isOwner)
+            IconButton(
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) =>
+                      CreateEventScreen(userModel: widget.userModel),
+                ),
               ),
+              icon: const Icon(
+                Icons.add_circle_outline_rounded,
+                color: Colors.white,
+              ),
+              tooltip: 'Add Event',
             ),
-            icon: const Icon(
-              Icons.add_circle_outline_rounded,
-              color: Colors.white,
-            ),
-            tooltip: 'Add Event',
-          ),
           PopupMenuButton<String>(
+            icon: const Icon(Icons.sort, color: Colors.white),
             onSelected: (value) {
               setState(() {
                 _sortCriterion = value;
@@ -55,50 +59,86 @@ class _EventScreenState extends State<EventScreen> {
               const PopupMenuItem(value: 'name', child: Text('Sort by Name')),
               const PopupMenuItem(
                   value: 'category', child: Text('Sort by Category')),
-              const PopupMenuItem(
-                  value: 'status', child: Text('Sort by Status')),
+              const PopupMenuItem(value: 'status', child: Text('Sort by Date')),
             ],
           ),
         ],
       ),
-      body: StreamBuilder<List<EventModel>>(
-        stream: _eventController.fetchUserEvents(widget.userModel.id),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          } else if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
-          } else if (snapshot.hasData) {
-            var events = snapshot.data!;
+      body: Stack(
+        children: [
+          Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Colors.blue,
+                  Colors.purple,
+                  Color.fromARGB(255, 90, 15, 103)
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+            ),
+          ),
+          StreamBuilder<List<EventModel>>(
+            stream: _eventController.fetchUserEvents(widget.userModel.id),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              } else if (snapshot.hasError) {
+                return Center(child: Text('Error: ${snapshot.error}'));
+              } else if (snapshot.data!.isEmpty) {
+                return const Center(
+                    child: Text('No events found.',
+                        style: TextStyle(color: Colors.black)));
+              } else {
+                var events = snapshot.data!;
 
-            // Sort events based on the selected criterion
-            events.sort((a, b) {
-              switch (_sortCriterion) {
-                case 'category':
-                  return a.category.compareTo(b.category);
-                case 'status':
-                  return _getEventStatus(a).compareTo(_getEventStatus(b));
-                case 'name':
-                default:
-                  return a.name.compareTo(b.name);
-              }
-            });
+                // Sort events based on the selected criterion
+                events.sort((a, b) {
+                  switch (_sortCriterion) {
+                    case 'category':
+                      return a.category.compareTo(b.category);
+                    case 'status':
+                      return _getEventStatus(a).compareTo(_getEventStatus(b));
+                    case 'name':
+                    default:
+                      return a.name.compareTo(b.name);
+                  }
+                });
 
-            return ListView.builder(
-              itemCount: events.length,
-              itemBuilder: (context, index) {
-                final event = events[index];
-                return EventCard(
-                  event: event,
-                  onEdit: () => _editEvent(context, event),
-                  onDelete: () => _deleteEvent(context, event),
+                return ListView.builder(
+                  itemCount: events.length,
+                  itemBuilder: (context, index) {
+                    final event = events[index];
+                    return GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => GiftScreen(
+                              eventID: event.id,
+                              eventName: event.name,
+                              isOwner: widget.isOwner,
+                            ),
+                          ),
+                        );
+                      },
+                      child: EventCard(
+                        event: event,
+                        onEdit: widget.isOwner
+                            ? () => _editEvent(context, event)
+                            : null,
+                        onDelete: widget.isOwner
+                            ? () => _deleteEvent(context, event)
+                            : null,
+                      ),
+                    );
+                  },
                 );
-              },
-            );
-          } else {
-            return const Center(child: Text('No events found.'));
-          }
-        },
+              }
+            },
+          ),
+        ],
       ),
     );
   }
@@ -132,7 +172,7 @@ class _EventScreenState extends State<EventScreen> {
       builder: (context) => AlertDialog(
         title: const Text('Delete Event'),
         content:
-            const Text('Deleting an event will delete associated gift lists!.'),
+            const Text('Deleting an event will delete associated gift lists!'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),

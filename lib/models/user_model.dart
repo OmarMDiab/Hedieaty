@@ -94,13 +94,13 @@ class UserModel {
 
       if (doc.exists) {
         // for friends cards
-        final eventdoc = await _firestore
+        final eventdocs = await _firestore
             .collection('events')
             .where('userID', isEqualTo: id)
             .where('date', isGreaterThan: Timestamp.fromDate(DateTime.now()))
             .get();
 
-        final numberOfEvents = eventdoc.docs.length; // get numeber of events
+        final numberOfEvents = eventdocs.docs.length; // get numeber of events
         var userData = doc.data();
         return UserModel(
           id: id,

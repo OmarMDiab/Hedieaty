@@ -11,6 +11,7 @@ class EventModel {
   final String location;
   final String description;
   final String category;
+  final int numberOfGifts;
   final String userID;
 
   EventModel({
@@ -20,6 +21,7 @@ class EventModel {
     this.location = '',
     this.category = '',
     this.description = '',
+    this.numberOfGifts = 0,
     this.userID = '',
   }) : date = date ?? DateTime.now();
 
@@ -51,15 +53,22 @@ class EventModel {
     try {
       final doc = await _firestore.collection('events').doc(id).get();
       if (doc.exists) {
-        var data = doc.data();
+        final giftdocs = await _firestore
+            .collection('gifts')
+            .where('eventID', isEqualTo: id)
+            .get();
+
+        final numberOfGifts = giftdocs.docs.length;
+        var eventData = doc.data();
         return EventModel(
           id: id,
-          name: data?['name'],
-          date: data?['date'].toDate(),
-          location: data?['location'],
-          category: data?['category'],
-          description: data?['description'],
-          userID: data?['userID'],
+          name: eventData?['name'],
+          date: eventData?['date'].toDate(),
+          location: eventData?['location'],
+          category: eventData?['category'],
+          description: eventData?['description'],
+          numberOfGifts: numberOfGifts,
+          userID: eventData?['userID'],
         );
       }
       return null;
@@ -76,19 +85,27 @@ class EventModel {
           .collection('events')
           .where('userID', isEqualTo: userID)
           .snapshots()
-          .map((snapshot) {
-        return snapshot.docs.map((doc) {
+          .asyncMap((snapshot) async {
+        List<EventModel> events = [];
+        for (var doc in snapshot.docs) {
           var data = doc.data();
-          return EventModel(
+          final giftdocs = await _firestore
+              .collection('gifts')
+              .where('eventID', isEqualTo: doc.id)
+              .get();
+          final numberOfGifts = giftdocs.docs.length;
+          events.add(EventModel(
             id: doc.id,
             name: data['name'],
             date: data['date'].toDate(),
             location: data['location'],
             category: data['category'],
             description: data['description'],
+            numberOfGifts: numberOfGifts,
             userID: data['userID'],
-          );
-        }).toList();
+          ));
+        }
+        return events;
       });
     } catch (e) {
       throw Exception('Error fetching user events: $e');

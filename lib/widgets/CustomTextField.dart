@@ -6,6 +6,7 @@ class CustomTextField extends StatelessWidget {
   final IconData icon;
   final bool obscureText;
   final EdgeInsetsGeometry padding;
+  final TextInputType inputType;
 
   const CustomTextField({
     super.key,
@@ -14,6 +15,7 @@ class CustomTextField extends StatelessWidget {
     required this.icon,
     this.obscureText = false,
     this.padding = const EdgeInsets.only(bottom: 20.0),
+    this.inputType = TextInputType.text,
   });
 
   @override
@@ -23,6 +25,7 @@ class CustomTextField extends StatelessWidget {
       child: TextField(
         controller: controller,
         obscureText: obscureText,
+        keyboardType: inputType,
         decoration: InputDecoration(
           prefixIcon: Icon(icon, color: Colors.deepPurple),
           labelText: labelText,

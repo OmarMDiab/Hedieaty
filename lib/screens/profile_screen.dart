@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:hedieaty/models/event_model.dart';
 import 'package:hedieaty/models/user_model.dart';
 import 'package:hedieaty/screens/signup_screen.dart';
 import 'package:hedieaty/widgets/eventCard.dart';
+import 'gifts_screen.dart';
 import 'login_screen.dart';
 import 'package:hedieaty/controllers/event_controller.dart';
 
 class ProfileScreen extends StatefulWidget {
   final UserModel userModel;
-
-  const ProfileScreen({super.key, required this.userModel});
+  final bool isOwner;
+  const ProfileScreen(
+      {super.key, required this.userModel, this.isOwner = true});
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -146,7 +149,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                   ),
                   // Display all events inline
-                  StreamBuilder(
+                  StreamBuilder<List<EventModel>>(
                     stream:
                         _eventController.fetchUserEvents(widget.userModel.id),
                     builder: (context, snapshot) {
@@ -154,20 +157,35 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         return const Center(child: CircularProgressIndicator());
                       } else if (snapshot.hasError) {
                         return Center(child: Text('Error: ${snapshot.error}'));
-                      } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                        return const Center(child: Text('No events found.'));
+                      } else if (snapshot.data!.isEmpty) {
+                        return const Center(
+                            child: Text('No events found.',
+                                style: TextStyle(color: Colors.black)));
                       } else {
-                        final events = snapshot.data!;
-                        return Column(
-                          children: events.map<Widget>((event) {
-                            return Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(vertical: 8.0),
+                        var events = snapshot.data!;
+
+                        return ListView.builder(
+                          itemCount: events.length,
+                          itemBuilder: (context, index) {
+                            final event = events[index];
+                            return GestureDetector(
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => GiftScreen(
+                                      eventID: event.id,
+                                      eventName: event.name,
+                                      isOwner: widget.isOwner,
+                                    ),
+                                  ),
+                                );
+                              },
                               child: EventCard(
                                 event: event,
                               ),
                             );
-                          }).toList(),
+                          },
                         );
                       }
                     },
@@ -176,6 +194,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   Center(
                     child: ElevatedButton(
                       onPressed: () {
+                        Navigator.pop(context);
                         Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(

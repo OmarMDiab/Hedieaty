@@ -9,7 +9,8 @@ class GiftModel {
   final String description;
   final String category;
   final double price;
-  final String status;
+  late final String status; // pledged or not
+  final DateTime dueDate;
   final String eventID;
 
   // Default constructor with optional parameters
@@ -20,26 +21,29 @@ class GiftModel {
     this.category = '',
     this.price = 0.0,
     this.status = '',
+    DateTime? dueDate,
     this.eventID = '',
-  });
+  }) : dueDate = dueDate ?? DateTime.now();
 
   Future<void> saveGift({
-    required String id,
     required String name,
     required String description,
     required String category,
     required double price,
     required String status,
+    required DateTime dueDate,
     required String eventID,
   }) async {
     try {
-      await _firestore.collection('gifts').doc(id).set({
-        'id': id,
+      final docRef = _firestore.collection('gifts').doc();
+      await docRef.set({
+        'id': docRef.id,
         'name': name,
         'description': description,
         'category': category,
         'price': price,
         'status': status,
+        'dueDate': dueDate,
         'eventID': eventID,
       });
     } catch (e) {
@@ -59,6 +63,7 @@ class GiftModel {
           category: data?['category'],
           price: data?['price'],
           status: data?['status'],
+          dueDate: data?['dueDate'].toDate(),
           eventID: data?['eventID'],
         );
       }
@@ -68,23 +73,24 @@ class GiftModel {
     }
   }
 
-  Future<List<GiftModel>> fetchGifts(String eventID) async {
+  Stream<List<GiftModel>> fetchGifts(String eventID) {
     try {
-      final snapshot = await _firestore
+      return _firestore
           .collection('gifts')
           .where('eventID', isEqualTo: eventID)
-          .get();
-      return snapshot.docs
-          .map((doc) => GiftModel(
-                id: doc.data()['id'],
-                name: doc.data()['name'],
-                description: doc.data()['description'],
-                category: doc.data()['category'],
-                price: doc.data()['price'],
-                status: doc.data()['status'],
-                eventID: doc.data()['eventID'],
-              ))
-          .toList();
+          .snapshots()
+          .map((snapshot) => snapshot.docs
+              .map((doc) => GiftModel(
+                    id: doc.data()['id'],
+                    name: doc.data()['name'],
+                    description: doc.data()['description'],
+                    category: doc.data()['category'],
+                    price: doc.data()['price'],
+                    status: doc.data()['status'],
+                    dueDate: doc.data()['dueDate'].toDate(),
+                    eventID: doc.data()['eventID'],
+                  ))
+              .toList());
     } catch (e) {
       throw Exception('Error fetching gifts: $e');
     }
@@ -97,6 +103,39 @@ class GiftModel {
       });
     } catch (e) {
       throw Exception('Error updating gift status: $e');
+    }
+  }
+
+  // updateGiftDetails
+  Future<void> updateGiftDetails({
+    required String id,
+    String? name,
+    String? description,
+    String? category,
+    double? price,
+    String? status,
+    DateTime? dueDate,
+  }) async {
+    try {
+      final updateData = <String, dynamic>{};
+      if (name != null) updateData['name'] = name;
+      if (description != null) updateData['description'] = description;
+      if (category != null) updateData['category'] = category;
+      if (price != null) updateData['price'] = price;
+      if (status != null) updateData['status'] = status;
+      if (dueDate != null) updateData['dueDate'] = dueDate;
+
+      await _firestore.collection('gifts').doc(id).update(updateData);
+    } catch (e) {
+      throw Exception('Error updating gift: $e');
+    }
+  }
+
+  Future<void> deleteGift(String id) async {
+    try {
+      await _firestore.collection('gifts').doc(id).delete();
+    } catch (e) {
+      throw Exception('Error deleting gift: $e');
     }
   }
 }

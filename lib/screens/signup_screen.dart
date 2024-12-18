@@ -209,7 +209,15 @@ class _SignupScreenState extends State<SignupScreen> {
                 icon: Icons.phone,
               ),
 
-              // Preferences TextField
+              // Password TextField (only for signup)
+              if (!widget.isEditMode)
+                CustomTextField(
+                    controller: passwordController,
+                    labelText: 'Password',
+                    icon: Icons.lock,
+                    obscureText: true),
+
+// Preferences TextField
               CustomTextField(
                 controller: preferencesController,
                 labelText:
@@ -220,10 +228,19 @@ class _SignupScreenState extends State<SignupScreen> {
               // Add a button to add preferences
               ElevatedButton(
                 onPressed: () {
-                  setState(() {
-                    preferences.add(preferencesController.text);
-                    preferencesController.clear();
-                  });
+                  if (preferencesController.text.isNotEmpty) {
+                    setState(() {
+                      preferences.add(preferencesController.text);
+                      preferencesController.clear();
+                    });
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Preference cannot be empty'),
+                        backgroundColor: Color.fromARGB(255, 187, 46, 36),
+                      ),
+                    );
+                  }
                 },
                 child: const Text('Add Preference'),
               ),
@@ -245,15 +262,6 @@ class _SignupScreenState extends State<SignupScreen> {
                   );
                 }).toList(),
               ),
-
-              // Password TextField (only for signup)
-              if (!widget.isEditMode)
-                CustomTextField(
-                    controller: passwordController,
-                    labelText: 'Password',
-                    icon: Icons.lock,
-                    obscureText: true),
-
               const SizedBox(height: 30),
 
               // Submit Button

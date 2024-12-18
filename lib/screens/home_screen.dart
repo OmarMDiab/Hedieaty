@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:hedieaty/screens/create_event_screen.dart';
+import 'create_event_screen.dart';
 import '../models/user_model.dart';
 import 'profile_screen.dart';
 import '../controllers/user_controller.dart';
@@ -143,9 +143,10 @@ class _HomeScreenState extends State<HomeScreen> {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) =>
-                                    ProfileScreen(userModel: friend),
-                              ),
+                                  builder: (context) => EventScreen(
+                                        userModel: friend,
+                                        isOwner: false,
+                                      )),
                             );
                           },
                           child: FriendCard(friend: friend),
