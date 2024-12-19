@@ -1,15 +1,22 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:hedieaty/controllers/gift_controller.dart';
 import 'package:hedieaty/widgets/CustomTextField.dart';
 import 'package:hedieaty/models/gift_model.dart';
+import 'package:hedieaty/models/event_model.dart';
+import 'package:hedieaty/models/user_model.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:image_picker/image_picker.dart'; // Import image picker
 
 class CreateGiftScreen extends StatefulWidget {
   final GiftModel? giftModel;
-  final String eventID;
+  final EventModel eventModel;
+  final UserModel userModel;
 
   const CreateGiftScreen({
     super.key,
-    required this.eventID,
+    required this.eventModel,
+    required this.userModel,
     this.giftModel,
   });
 
@@ -25,6 +32,7 @@ class _CreateGiftScreenState extends State<CreateGiftScreen> {
   final _dueDateController = TextEditingController();
 
   String? _selectedCategory;
+  String? _imageBase64; // To store the Base64 encoded image
 
   final List<String> _categories = [
     'games 🎮',
@@ -57,6 +65,8 @@ class _CreateGiftScreenState extends State<CreateGiftScreen> {
       _dueDateController.text =
           widget.giftModel!.dueDate.toIso8601String().split('T')[0];
       _selectedCategory = widget.giftModel!.category;
+      _imageBase64 =
+          widget.giftModel?.imageBase64; // Fetch encoded image if exists
     }
   }
 
@@ -74,18 +84,46 @@ class _CreateGiftScreenState extends State<CreateGiftScreen> {
     }
   }
 
+  Future<void> _requestImagePermission() async {
+    // Request permission for photos
+    PermissionStatus status = await Permission.photos.request();
+    if (status.isGranted) {
+      _pickImage();
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Permission denied!')),
+      );
+    }
+  }
+
+  Future<void> _pickImage() async {
+    // Pick an image from the gallery
+    final ImagePicker _picker = ImagePicker();
+    XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+    if (image != null) {
+      // Convert the image to Base64
+      final imageBytes = await image.readAsBytes();
+      setState(() {
+        _imageBase64 =
+            base64Encode(imageBytes); // Store the image as Base64 text
+      });
+    }
+  }
+
   void _saveGift() {
     if (_formKey.currentState!.validate()) {
       if (widget.giftModel == null) {
         // Create new gift
         GiftController().addGift(
-          eventID: widget.eventID,
+          eventID: widget.eventModel.id,
           name: _giftNameController.text,
           description: _giftDescriptionController.text,
           category: _selectedCategory!,
           price: double.parse(_giftPriceController.text),
           status: 'Available',
           dueDate: DateTime.parse(_dueDateController.text),
+          createdBy: widget.userModel.name,
+          imageBase64: _imageBase64, // Save the Base64 image
         );
       } else {
         // Update existing gift
@@ -97,6 +135,7 @@ class _CreateGiftScreenState extends State<CreateGiftScreen> {
           price: double.parse(_giftPriceController.text),
           status: 'Available',
           dueDate: DateTime.parse(_dueDateController.text),
+          imageBase64: _imageBase64, // Update the image
         );
       }
       Navigator.pop(context);
@@ -127,9 +166,42 @@ class _CreateGiftScreenState extends State<CreateGiftScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: <Widget>[
                 Center(
-                  child: Image.asset(
-                    'assets/images/boxes/gifts.png',
-                    height: 240,
+                  child: _imageBase64 == null || _imageBase64!.isEmpty
+                      ? Image.asset(
+                          'assets/images/boxes/gifts.png',
+                          height: 240,
+                        )
+                      : Container(
+                          padding: const EdgeInsets.symmetric(vertical: 8.0),
+                          alignment: Alignment.center,
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(15),
+                            child: Image.memory(
+                              base64Decode(_imageBase64!),
+                              height: 200,
+                              width: 300,
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                        ),
+                ),
+                const SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: _requestImagePermission,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.deepPurpleAccent,
+                    padding: const EdgeInsets.symmetric(vertical: 15),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: const Text(
+                    'Pick an Image',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 20),

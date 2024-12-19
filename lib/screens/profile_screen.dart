@@ -6,6 +6,7 @@ import 'package:hedieaty/widgets/eventCard.dart';
 import 'gifts_screen.dart';
 import 'login_screen.dart';
 import 'package:hedieaty/controllers/event_controller.dart';
+import 'my_pledged_gifts_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   final UserModel userModel;
@@ -131,64 +132,105 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                   ),
                   const SizedBox(height: 8),
+                  Center(
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color.fromARGB(255, 67, 25, 184),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 15, vertical: 8),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12.0),
+                        ),
+                      ),
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => MyPledgedGiftsScreen(
+                                  userModel: widget.userModel)),
+                        );
+                      },
+                      child: const Text(
+                        'My Pledged Gifts 💝',
+                        style: TextStyle(color: Colors.white, fontSize: 16),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
                   const Divider(
                     color: Color.fromARGB(255, 255, 255, 255),
-                    thickness: 2,
+                    thickness: 4,
                     indent: 5,
                     endIndent: 5,
                   ),
                   // Title for events
                   const Center(
                     child: Text(
-                      "Your Events",
+                      "Your Events/Gifts Lists",
                       style: TextStyle(
                         fontSize: 22,
+                        decorationColor: Colors.amberAccent,
                         fontWeight: FontWeight.bold,
                         color: Color.fromARGB(255, 255, 255, 255),
                       ),
                     ),
                   ),
-                  // Display all events inline
-                  StreamBuilder<List<EventModel>>(
-                    stream:
-                        _eventController.fetchUserEvents(widget.userModel.id),
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const Center(child: CircularProgressIndicator());
-                      } else if (snapshot.hasError) {
-                        return Center(child: Text('Error: ${snapshot.error}'));
-                      } else if (snapshot.data!.isEmpty) {
-                        return const Center(
-                            child: Text('No events found.',
-                                style: TextStyle(color: Colors.black)));
-                      } else {
-                        var events = snapshot.data!;
+                  const SizedBox(height: 20),
 
-                        return ListView.builder(
-                          itemCount: events.length,
-                          itemBuilder: (context, index) {
-                            final event = events[index];
-                            return GestureDetector(
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => GiftScreen(
-                                      eventID: event.id,
-                                      eventName: event.name,
-                                      isOwner: widget.isOwner,
-                                    ),
+                  // Display all events inline
+                  Card(
+                    elevation: 4,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                    color: Colors.transparent,
+                    child: StreamBuilder<List<EventModel>>(
+                      stream:
+                          _eventController.fetchUserEvents(widget.userModel.id),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return const Center(
+                              child: CircularProgressIndicator());
+                        } else if (snapshot.hasError) {
+                          return Center(
+                              child: Text('Error: ${snapshot.error}'));
+                        } else if (snapshot.data!.isEmpty) {
+                          return const Center(
+                              child: Text('No events found.',
+                                  style: TextStyle(color: Colors.black)));
+                        } else {
+                          var events = snapshot.data!;
+
+                          return SizedBox(
+                            height: 220, // Set a fixed height
+                            child: ListView.builder(
+                              itemCount: events.length,
+                              itemBuilder: (context, index) {
+                                final event = events[index];
+                                return GestureDetector(
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => GiftScreen(
+                                          eventModel: event,
+                                          userModel: widget.userModel,
+                                          isOwner: widget.isOwner,
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                  child: EventCard(
+                                    event: event,
                                   ),
                                 );
                               },
-                              child: EventCard(
-                                event: event,
-                              ),
-                            );
-                          },
-                        );
-                      }
-                    },
+                            ),
+                          );
+                        }
+                      },
+                    ),
                   ),
                   const SizedBox(height: 20),
                   Center(

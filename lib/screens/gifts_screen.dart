@@ -4,15 +4,18 @@ import 'package:hedieaty/models/gift_model.dart';
 import 'package:hedieaty/widgets/gift_card.dart';
 import 'gift_details_screen.dart';
 import 'create_gift_screen.dart';
+import '../models/user_model.dart';
+import '../models/event_model.dart';
 
 class GiftScreen extends StatefulWidget {
-  final String eventID; // Event ID to fetch gifts for
-  final String eventName;
+  final EventModel eventModel;
+  final UserModel userModel;
   final bool isOwner;
+
   const GiftScreen(
       {super.key,
-      required this.eventID,
-      required this.eventName,
+      required this.eventModel,
+      required this.userModel,
       this.isOwner = true});
 
   @override
@@ -29,7 +32,7 @@ class _GiftScreenState extends State<GiftScreen> {
       appBar: AppBar(
         backgroundColor: const Color.fromARGB(255, 67, 25, 184),
         title: Text(
-          'Gift list for ${widget.eventName}',
+          'Gift list for ${widget.eventModel.name}',
           style: const TextStyle(
             color: Colors.white,
             fontSize: 19,
@@ -44,8 +47,9 @@ class _GiftScreenState extends State<GiftScreen> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) =>
-                        CreateGiftScreen(eventID: widget.eventID),
+                    builder: (context) => CreateGiftScreen(
+                        eventModel: widget.eventModel,
+                        userModel: widget.userModel),
                   ),
                 );
               },
@@ -93,9 +97,8 @@ class _GiftScreenState extends State<GiftScreen> {
               ),
             ),
           ),
-          const SizedBox(height: 10),
           StreamBuilder<List<GiftModel>>(
-            stream: giftController.fetchGifts(widget.eventID),
+            stream: giftController.fetchGifts(widget.eventModel.id),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Center(child: CircularProgressIndicator());
@@ -125,37 +128,39 @@ class _GiftScreenState extends State<GiftScreen> {
                     final gift = gifts[index];
                     return GiftCard(
                       gift: gift,
+                      isOwner: widget.isOwner,
                       onTap: () {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => GiftDetailsScreen(gift: gift),
+                            builder: (context) => GiftDetailsScreen(
+                              gift: gift,
+                              userModel: widget.userModel,
+                              isOwner: widget.isOwner,
+                            ),
                           ),
                         );
                       },
-                      onEdit: widget.isOwner
-                          ? () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => CreateGiftScreen(
-                                    eventID: widget.eventID,
-                                    giftModel: gift,
-                                  ),
-                                ),
-                              );
-                            }
-                          : null,
-                      onDelete: widget.isOwner
-                          ? () {
-                              giftController.deleteGift(gift.id);
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text('gift: ${gift.name} deleted'),
-                                ),
-                              );
-                            }
-                          : null,
+                      onEdit: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => CreateGiftScreen(
+                              eventModel: widget.eventModel,
+                              userModel: widget.userModel,
+                              giftModel: gift,
+                            ),
+                          ),
+                        );
+                      },
+                      onDelete: () {
+                        giftController.deleteGift(gift.id);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('gift: ${gift.name} deleted'),
+                          ),
+                        );
+                      },
                     );
                   },
                 );

@@ -116,8 +116,8 @@ class _EventScreenState extends State<EventScreen> {
                           context,
                           MaterialPageRoute(
                             builder: (context) => GiftScreen(
-                              eventID: event.id,
-                              eventName: event.name,
+                              eventModel: event,
+                              userModel: widget.userModel,
                               isOwner: widget.isOwner,
                             ),
                           ),

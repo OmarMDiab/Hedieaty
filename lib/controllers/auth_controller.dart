@@ -51,5 +51,11 @@ class AuthController {
     return null;
   }
 
+  // get current user id
+  String? getCurrentUserID() {
+    final user = _auth.currentUser;
+    return user?.uid;
+  }
+
   Future<void> logout() async => await _auth.signOut();
 }

@@ -11,6 +11,8 @@ class GiftController {
     required String status,
     required DateTime dueDate,
     required String eventID,
+    required String createdBy,
+    String? imageBase64,
   }) async {
     try {
       await _giftModel.saveGift(
@@ -21,6 +23,8 @@ class GiftController {
         status: status,
         dueDate: dueDate,
         eventID: eventID,
+        createdBy: createdBy,
+        imageBase64: imageBase64,
       );
     } catch (e) {
       throw Exception('Error saving gift: $e');
@@ -39,9 +43,10 @@ class GiftController {
     return null;
   }
 
-  Future<void> pledgeGift(String id) async {
+  Future<void> changeGiftStatus(
+      String giftID, String? userID, String status) async {
     try {
-      await _giftModel.updateGiftStatus(id, 'Pledged');
+      await _giftModel.updateGiftStatus(giftID, userID!, status);
     } catch (e) {
       throw Exception('Error updating gift status: $e');
     }
@@ -56,6 +61,7 @@ class GiftController {
     double? price,
     String? status,
     DateTime? dueDate,
+    String? imageBase64,
   }) async {
     try {
       await _giftModel.updateGiftDetails(
@@ -66,6 +72,7 @@ class GiftController {
         price: price,
         status: status,
         dueDate: dueDate,
+        imageBase64: imageBase64,
       );
     } catch (e) {
       throw Exception('Error updating gift: $e');
@@ -75,6 +82,11 @@ class GiftController {
   // fetch gifts using stream
   Stream<List<GiftModel>> fetchGifts(String eventID) {
     return _giftModel.fetchGifts(eventID);
+  }
+
+  // get pledgedBy user gifts
+  Future<List<GiftModel>> getMyPledgedGifts(String userID) {
+    return _giftModel.getGiftsPledgedBy(userID);
   }
 
   // delete gift
