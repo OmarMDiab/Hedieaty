@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+//import 'package:firebase_messaging/firebase_messaging.dart';
 
 class UserModel {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -11,6 +12,7 @@ class UserModel {
   final int numberOfEvents;
   final List<String> friends;
   final List<String> preferences;
+  final String? deviceToken;
 
   // Default constructor with optional parameters
   UserModel({
@@ -22,6 +24,7 @@ class UserModel {
     this.friends = const [],
     this.numberOfEvents = 0,
     this.preferences = const [],
+    this.deviceToken = '',
   });
 
   Future<void> saveUser({
@@ -31,6 +34,7 @@ class UserModel {
     required String email,
     required phoneNumber,
     required List<String> preferences,
+    String? deviceToken,
   }) async {
     try {
       await _firestore.collection('users').doc(id).set({
@@ -41,6 +45,7 @@ class UserModel {
         'phoneNumber': phoneNumber,
         'friends': [],
         'preferences': preferences,
+        'deviceToken': deviceToken,
       });
     } catch (e) {
       throw Exception('Error saving user: $e');
@@ -55,6 +60,7 @@ class UserModel {
     String? email,
     String? phoneNumber,
     List<String>? preferences,
+    String? deviceToken,
   }) async {
     try {
       Map<String, dynamic> updateData = {};
@@ -63,6 +69,7 @@ class UserModel {
       if (email != null) updateData['email'] = email;
       if (phoneNumber != null) updateData['phoneNumber'] = phoneNumber;
       if (preferences != null) updateData['preferences'] = preferences;
+      if (deviceToken != null) updateData['deviceToken'] = deviceToken;
 
       await _firestore.collection('users').doc(id).update(updateData);
     } catch (e) {
@@ -111,6 +118,7 @@ class UserModel {
           numberOfEvents: numberOfEvents,
           friends: List<String>.from(userData?['friends'] ?? []),
           preferences: List<String>.from(userData?['preferences'] ?? []),
+          deviceToken: userData?['deviceToken'],
         );
       }
       return null;
@@ -119,7 +127,7 @@ class UserModel {
     }
   }
 
-  Future<bool> addFriend({
+  Future<String?> addFriend({
     required String userID,
     required String phoneNumber,
   }) async {
@@ -132,7 +140,7 @@ class UserModel {
           .get();
 
       if (querySnapshot.docs.isEmpty) {
-        return false;
+        return null;
       }
 
       // >>> phone numbers are unique and we get only one document
@@ -163,8 +171,9 @@ class UserModel {
           'friends': [userID],
         });
       }
+      final String? friendDeviceToken = friendDoc.data()?['deviceToken'];
 
-      return true;
+      return friendDeviceToken;
     } catch (e) {
       throw Exception('Error adding Friend: $e');
     }
@@ -188,6 +197,17 @@ class UserModel {
       return [];
     } catch (e) {
       throw Exception('Error fetching user friends: $e');
+    }
+  }
+
+  // update user device token
+  Future<void> updateFCMToken(String id, String? deviceToken) async {
+    try {
+      await _firestore.collection('users').doc(id).update({
+        'deviceToken': deviceToken,
+      });
+    } catch (e) {
+      throw Exception('Error updating user device token: $e');
     }
   }
 }

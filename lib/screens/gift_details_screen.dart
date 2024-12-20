@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:hedieaty/controllers/user_controller.dart';
 import 'package:hedieaty/models/gift_model.dart';
 import 'package:hedieaty/controllers/gift_controller.dart';
 import 'package:hedieaty/models/user_model.dart';
@@ -22,6 +23,7 @@ class GiftDetailsScreen extends StatefulWidget {
 class _GiftDetailsScreenState extends State<GiftDetailsScreen> {
   final GiftController _giftController = GiftController();
   final AuthController _authController = AuthController();
+  final UserController _userController = UserController();
   late String _giftStatus;
 
   @override
@@ -195,8 +197,10 @@ class _GiftDetailsScreenState extends State<GiftDetailsScreen> {
                         ),
                       ),
                       onPressed: () async {
-                        await _giftController.changeGiftStatus(widget.gift.id,
-                            _authController.getCurrentUserID(), 'Pledged');
+                        final userModel = await _userController
+                            .fetchUser(_authController.getCurrentUserID()!);
+                        await _giftController.changeGiftStatus(
+                            widget.gift, userModel, 'Pledged');
                         setState(() {
                           _giftStatus = 'Pledged';
                         });

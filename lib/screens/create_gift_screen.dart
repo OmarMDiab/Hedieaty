@@ -98,8 +98,8 @@ class _CreateGiftScreenState extends State<CreateGiftScreen> {
 
   Future<void> _pickImage() async {
     // Pick an image from the gallery
-    final ImagePicker _picker = ImagePicker();
-    XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+    final ImagePicker picker = ImagePicker();
+    XFile? image = await picker.pickImage(source: ImageSource.gallery);
     if (image != null) {
       // Convert the image to Base64
       final imageBytes = await image.readAsBytes();

@@ -1,4 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:hedieaty/models/user_model.dart';
+import 'package:hedieaty/services/push_notification_service.dart';
 
 class GiftModel {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -113,18 +115,37 @@ class GiftModel {
   }
 
   Future<void> updateGiftStatus(
-      String giftID, String userID, String status) async {
+      GiftModel giftModel, UserModel userModel, String status) async {
     try {
+      // Send push notification to the user who added the gift
+      final eventID = await _firestore
+          .collection('gifts')
+          .doc(giftModel.id)
+          .get()
+          .then((value) => value.data()?['eventID']);
+      final eventDoc = await _firestore.collection('events').doc(eventID).get();
+      final userDoc = await _firestore
+          .collection('users')
+          .doc(eventDoc.data()?['userID'])
+          .get();
+      final userDeviceToken = userDoc.data()?['deviceToken'];
+
       if (status == 'Pledged') {
-        await _firestore.collection('gifts').doc(giftID).update({
+        await _firestore.collection('gifts').doc(giftModel.id).update({
           'status': status,
-          'pledgedBy': userID,
+          'pledgedBy': userModel.id,
         });
+
+        PushNotificationService.sendPushNotificationToGiftOwner(
+            userDeviceToken, userModel.name, giftModel.name, status);
       } else {
-        await _firestore.collection('gifts').doc(giftID).update({
+        await _firestore.collection('gifts').doc(giftModel.id).update({
           'status': status,
           'pledgedBy': '',
         });
+
+        PushNotificationService.sendPushNotificationToGiftOwner(
+            userDeviceToken, userModel.name, giftModel.name, status);
       }
     } catch (e) {
       throw Exception('Error updating gift status: $e');

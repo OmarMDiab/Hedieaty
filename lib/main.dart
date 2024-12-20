@@ -2,13 +2,27 @@ import 'package:flutter/material.dart';
 import 'screens/login_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'dart:io';
+import 'package:overlay_support/overlay_support.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  runApp(const MyApp());
+
+  FirebaseMessaging messaging = FirebaseMessaging.instance;
+
+  // Request permission for iOS
+  if (Platform.isIOS) {
+    await messaging.requestPermission();
+  }
+  runApp(
+    const OverlaySupport.global(
+      child: MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {

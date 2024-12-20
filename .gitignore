@@ -120,3 +120,7 @@ app.*.map.json
 # Firebase
 google-services.json
 .firebase/
+
+lib/services/push_notification_service.dart
+
+lib/models/user_model_draft.txt

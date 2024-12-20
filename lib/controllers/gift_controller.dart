@@ -1,3 +1,5 @@
+import 'package:hedieaty/models/user_model.dart';
+
 import '../models/gift_model.dart';
 
 class GiftController {
@@ -44,9 +46,9 @@ class GiftController {
   }
 
   Future<void> changeGiftStatus(
-      String giftID, String? userID, String status) async {
+      GiftModel giftModel, UserModel? userModel, String status) async {
     try {
-      await _giftModel.updateGiftStatus(giftID, userID!, status);
+      await _giftModel.updateGiftStatus(giftModel, userModel!, status);
     } catch (e) {
       throw Exception('Error updating gift status: $e');
     }

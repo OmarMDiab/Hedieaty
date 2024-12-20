@@ -1,5 +1,7 @@
 import '../models/user_model.dart';
 
+// ProjectID: hedieaty-dc62b
+
 class UserController {
   final UserModel _userModel = UserModel();
 
@@ -12,6 +14,7 @@ class UserController {
         email: user.email,
         phoneNumber: user.phoneNumber,
         preferences: user.preferences,
+        deviceToken: user.deviceToken,
       );
     } catch (e) {
       throw Exception('Error saving user: $e');
@@ -48,13 +51,13 @@ class UserController {
   }
 
   // add friends
-  Future<bool> addFriend(String id, String phoneNumber) async {
+  Future<String?> addFriend(String id, String phoneNumber) async {
     try {
-      final status =
+      final friendToken =
           await _userModel.addFriend(userID: id, phoneNumber: phoneNumber);
-      return status;
+      return friendToken;
     } catch (e) {
-      return false;
+      return null;
     }
   }
 
@@ -65,6 +68,15 @@ class UserController {
       return friends;
     } catch (e) {
       throw Exception('Error fetching user friends: $e');
+    }
+  }
+
+  // update FCM Token
+  Future<void> updateUserDeviceToken(String id, String? deviceToken) async {
+    try {
+      await _userModel.updateFCMToken(id, deviceToken);
+    } catch (e) {
+      throw Exception('Error updating FCM Token: $e');
     }
   }
 }

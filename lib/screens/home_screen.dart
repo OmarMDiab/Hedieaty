@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hedieaty/services/get_notification_service.dart';
 import 'create_event_screen.dart';
 import '../models/user_model.dart';
 import 'profile_screen.dart';
@@ -7,6 +8,7 @@ import 'events_screen.dart';
 import 'login_screen.dart';
 import 'package:hedieaty/widgets/CustomTextField.dart';
 import 'package:hedieaty/widgets/friendCard.dart';
+import 'package:hedieaty/services/push_notification_service.dart';
 
 class HomeScreen extends StatefulWidget {
   final UserModel userModel;
@@ -19,6 +21,11 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final UserController _userController = UserController();
+  @override
+  void initState() {
+    super.initState();
+    GetNotificationService.initialize();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -257,22 +264,18 @@ class _HomeScreenState extends State<HomeScreen> {
                 if (phoneNumber.isNotEmpty) {
                   _userController
                       .addFriend(widget.userModel.id, phoneNumber)
-                      .then(
-                    (success) {
-                      final message = success
-                          ? 'Friend added successfully!'
-                          : 'Friend not found.';
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                            content: Text(message,
-                                style: const TextStyle(
-                                    color: Colors.green,
-                                    fontWeight: FontWeight.bold))),
+                      .then((friendToken) {
+                    if (friendToken != null) {
+                      // Send a push notification
+
+                      PushNotificationService.sendPushNotificationToAddedFriend(
+                        friendToken,
+                        widget.userModel.name,
                       );
-                      Navigator.pop(context);
-                      setState(() {});
-                    },
-                  );
+                    }
+                    Navigator.pop(context);
+                    setState(() {});
+                  });
                 } else {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(

@@ -126,7 +126,7 @@ class PledgedGiftCard extends StatelessWidget {
                   ElevatedButton(
                     onPressed: () {
                       giftController.changeGiftStatus(
-                          gift.id, userModel.id, 'Available');
+                          gift, userModel, 'Available');
                       // Call the callback to update the list
                       onUnpledge();
                       ScaffoldMessenger.of(context).showSnackBar(
@@ -136,7 +136,7 @@ class PledgedGiftCard extends StatelessWidget {
                             label: 'Undo',
                             onPressed: () {
                               giftController.changeGiftStatus(
-                                  gift.id, userModel.id, 'Pledged');
+                                  gift, userModel, 'Pledged');
                               // Call the undo callback to refresh the list
                               onUndo();
                             },
