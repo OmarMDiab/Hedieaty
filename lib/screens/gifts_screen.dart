@@ -98,7 +98,8 @@ class _GiftScreenState extends State<GiftScreen> {
             ),
           ),
           StreamBuilder<List<GiftModel>>(
-            stream: giftController.fetchGifts(widget.eventModel.id),
+            stream: giftController.fetchGifts(
+                widget.eventModel.id, widget.userModel.id),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Center(child: CircularProgressIndicator());

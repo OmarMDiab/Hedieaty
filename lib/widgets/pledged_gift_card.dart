@@ -77,7 +77,7 @@ class PledgedGiftCard extends StatelessWidget {
                         borderRadius: BorderRadius.circular(12.0),
                       ),
                       child: Text(
-                        'Pledged for: ${gift.CreatedBy}',
+                        'Pledged for: ${gift.createdBy}',
                         style: const TextStyle(
                           fontSize: 14,
                           color: Colors.white,

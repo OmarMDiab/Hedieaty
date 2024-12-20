@@ -124,3 +124,5 @@ google-services.json
 lib/services/push_notification_service.dart
 
 lib/models/user_model_draft.txt
+lib/models/g1.dart
+lib/models/e1.dart

@@ -1,18 +1,24 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+// SQLiteHelper, GiftModel completed.
 
-//- Events (ID, name, date, location, description, user ID)
+// EventModel
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:hedieaty/controllers/auth_controller.dart';
+import 'package:hedieaty/services/sqlite_helper.dart';
+// get current user id
 
 class EventModel {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final AuthController _authController = AuthController();
 
-  final String id;
-  final String name;
-  final DateTime date;
-  final String location;
-  final String description;
-  final String category;
-  final int numberOfGifts;
-  final String userID;
+  String id;
+  String name;
+  DateTime date;
+  String location;
+  String category;
+  String description;
+  String userID;
+  bool isPublished;
+  int numberOfGifts;
 
   EventModel({
     this.id = '',
@@ -21,66 +27,107 @@ class EventModel {
     this.location = '',
     this.category = '',
     this.description = '',
-    this.numberOfGifts = 0,
     this.userID = '',
+    this.isPublished = false,
+    this.numberOfGifts = 0,
   }) : date = date ?? DateTime.now();
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'name': name,
+      'date': date.toIso8601String(),
+      'location': location,
+      'category': category,
+      'description': description,
+      'userID': userID,
+      'isPublished': isPublished ? 1 : 0,
+    };
+  }
+
+  static EventModel fromMap(Map<String, dynamic> map) {
+    return EventModel(
+      id: map['id'],
+      name: map['name'],
+      date: DateTime.parse(map['date']),
+      location: map['location'],
+      category: map['category'],
+      description: map['description'],
+      userID: map['userID'],
+      numberOfGifts: map['numberOfGifts'],
+      isPublished: map['isPublished'] == 1,
+    );
+  }
 
   Future<void> addEvent({
     required String name,
     required DateTime date,
     required String location,
-    required String description,
     required String category,
+    required String description,
     required String userID,
   }) async {
-    try {
-      DocumentReference docRef = _firestore.collection('events').doc();
-      await docRef.set({
-        'id': docRef.id,
-        'name': name,
-        'date': date,
-        'location': location,
-        'category': category,
-        'description': description,
-        'userID': userID,
-      });
-    } catch (e) {
-      throw Exception('Error saving event: $e');
-    }
+    final event = EventModel(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      name: name,
+      date: date,
+      location: location,
+      category: category,
+      description: description,
+      userID: userID,
+    );
+    await SQLiteHelper().insertData('events', event.toMap());
   }
 
-  Future<EventModel?> fetchEvent(String id) async {
+  Future<void> publishEvent(String eventId) async {
     try {
-      final doc = await _firestore.collection('events').doc(id).get();
-      if (doc.exists) {
-        final giftdocs = await _firestore
-            .collection('gifts')
-            .where('eventID', isEqualTo: id)
-            .get();
-
-        final numberOfGifts = giftdocs.docs.length;
-        var eventData = doc.data();
-        return EventModel(
-          id: id,
-          name: eventData?['name'],
-          date: eventData?['date'].toDate(),
-          location: eventData?['location'],
-          category: eventData?['category'],
-          description: eventData?['description'],
-          numberOfGifts: numberOfGifts,
-          userID: eventData?['userID'],
-        );
+      final localEvent = await SQLiteHelper().fetchDataById('events', eventId);
+      if (localEvent != null) {
+        final event = EventModel.fromMap(localEvent);
+        await _firestore.collection('events').doc(eventId).set(event.toMap());
+        event.isPublished = true;
+        await SQLiteHelper().updateData('events', eventId, {'isPublished': 1});
       }
-      return null;
     } catch (e) {
-      throw Exception('Error fetching event: $e');
+      throw Exception('Error publishing event: $e');
     }
   }
 
-  // fetch all user events
+  bool isEventPublished() {
+    return isPublished;
+  }
+
+  Future<void> deleteEvent(String eventId) async {
+    await SQLiteHelper().deleteData('events', eventId);
+    if (isPublished) {
+      await _firestore.collection('events').doc(eventId).delete();
+    }
+  }
+
+  Future<void> updateEvent({
+    required String id,
+    String? name,
+    DateTime? date,
+    String? location,
+    String? category,
+    String? description,
+  }) async {
+    final updatedData = {
+      if (name != null) 'name': name,
+      if (date != null) 'date': date.toIso8601String(),
+      if (location != null) 'location': location,
+      if (category != null) 'category': category,
+      if (description != null) 'description': description,
+    };
+    await SQLiteHelper().updateData('events', id, updatedData);
+    if (isPublished) {
+      await _firestore.collection('events').doc(id).update(updatedData);
+    }
+  }
 
   Stream<List<EventModel>> fetchUserEvents(String userID) {
-    try {
+    if (_authController.getCurrentUserID() != userID) {
+      // fetch from firebase
       return _firestore
           .collection('events')
           .where('userID', isEqualTo: userID)
@@ -107,38 +154,39 @@ class EventModel {
         }
         return events;
       });
-    } catch (e) {
-      throw Exception('Error fetching user events: $e');
+    } else {
+      // fetch from SQLite database
+      return SQLiteHelper()
+          .getStream('events', "userID", userID)
+          .asyncMap((snapshot) async {
+        List<EventModel> events = [];
+        for (var data in snapshot) {
+          final gifts = await SQLiteHelper()
+              .fetchByColumn('gifts', 'eventID', data['id']);
+          final numberOfGifts = gifts.length;
+          events.add(EventModel.fromMap(data)..numberOfGifts = numberOfGifts);
+        }
+        return events;
+      });
     }
   }
 
-  Future<void> updateEvent({
-    required String id,
-    String? name,
-    DateTime? date,
-    String? location,
-    String? description,
-    String? userID,
-  }) async {
-    try {
-      Map<String, dynamic> updatedData = {};
-      if (name != null) updatedData['name'] = name;
-      if (date != null) updatedData['date'] = date;
-      if (location != null) updatedData['location'] = location;
-      if (description != null) updatedData['description'] = description;
-      if (userID != null) updatedData['userID'] = userID;
-
-      await _firestore.collection('events').doc(id).update(updatedData);
-    } catch (e) {
-      throw Exception('Error updating event: $e');
+  Future<EventModel?> fetchEvent(String eventId) async {
+    if (_authController.getCurrentUserID() != userID) {
+      final doc = await _firestore.collection('events').doc(eventId).get();
+      if (doc.exists) {
+        final data = doc.data();
+        if (data != null) {
+          return EventModel.fromMap(data);
+        }
+        return null;
+      }
+    } else {
+      final localEvent = await SQLiteHelper().fetchDataById('events', eventId);
+      if (localEvent != null) {
+        return EventModel.fromMap(localEvent);
+      }
     }
-  }
-
-  Future<void> deleteEvent(String id) async {
-    try {
-      await _firestore.collection('events').doc(id).delete();
-    } catch (e) {
-      throw Exception('Error deleting event: $e');
-    }
+    return null;
   }
 }

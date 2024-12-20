@@ -1,38 +1,76 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:hedieaty/models/user_model.dart';
 import 'package:hedieaty/services/push_notification_service.dart';
+import 'package:hedieaty/services/sqlite_helper.dart';
+import 'package:hedieaty/controllers/auth_controller.dart';
 
 class GiftModel {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final AuthController _authController = AuthController();
 
-  final String id;
-  final String name;
-  final String description;
-  final String category;
-  final double price;
-  late final String status; // pledged or not
-  final DateTime dueDate;
-  final String eventID;
-  final String pledgedBy;
-  final String CreatedBy;
-  final String? imageBase64;
+  String id;
+  String name;
+  String description;
+  String category;
+  double price;
+  String status;
+  DateTime dueDate;
+  String eventID;
+  String pledgedBy;
+  String createdBy;
+  String? imageBase64;
+  bool isPublished;
 
-  // Default constructor with optional parameters
   GiftModel({
     this.id = '',
     this.name = '',
     this.description = '',
     this.category = '',
     this.price = 0.0,
-    this.status = '',
+    this.status = 'not',
     DateTime? dueDate,
     this.eventID = '',
     this.pledgedBy = '',
-    this.CreatedBy = '',
-    this.imageBase64 = '',
+    this.createdBy = '',
+    this.imageBase64,
+    this.isPublished = false,
   }) : dueDate = dueDate ?? DateTime.now();
 
-  Future<void> saveGift({
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'name': name,
+      'description': description,
+      'category': category,
+      'price': price,
+      'status': status,
+      'dueDate': dueDate.toIso8601String(),
+      'eventID': eventID,
+      'pledgedBy': pledgedBy,
+      'createdBy': createdBy,
+      'imageBase64': imageBase64,
+      'isPublished': isPublished ? 1 : 0,
+    };
+  }
+
+  static GiftModel fromMap(Map<String, dynamic> map) {
+    return GiftModel(
+      id: map['id'],
+      name: map['name'],
+      description: map['description'],
+      category: map['category'],
+      price: map['price'],
+      status: map['status'],
+      dueDate: DateTime.parse(map['dueDate']),
+      eventID: map['eventID'],
+      pledgedBy: map['pledgedBy'],
+      createdBy: map['createdBy'],
+      imageBase64: map['imageBase64'],
+      isPublished: map['isPublished'] == 1,
+    );
+  }
+
+  Future<void> addGift({
     required String name,
     required String description,
     required String category,
@@ -43,74 +81,67 @@ class GiftModel {
     required String createdBy,
     String? imageBase64,
   }) async {
+    final gift = GiftModel(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      name: name,
+      description: description,
+      category: category,
+      price: price,
+      status: status,
+      dueDate: dueDate,
+      eventID: eventID,
+      pledgedBy: '',
+      createdBy: createdBy,
+      imageBase64: imageBase64,
+    );
+    await SQLiteHelper().insertData('gifts', gift.toMap());
+  }
+
+  Future<void> publishGift() async {
     try {
-      final docRef = _firestore.collection('gifts').doc();
-      await docRef.set({
-        'id': docRef.id,
-        'name': name,
-        'description': description,
-        'category': category,
-        'price': price,
-        'status': status,
-        'dueDate': dueDate,
-        'eventID': eventID,
-        'pledgedBy': '',
-        'createdBy': createdBy,
-        'imageBase64': imageBase64,
-      });
+      await _firestore.collection('gifts').doc(id).set(toMap());
+      isPublished = true;
+      await SQLiteHelper().updateData('gifts', id, {'isPublished': 1});
     } catch (e) {
-      throw Exception('Error saving gift: $e');
+      throw Exception('Error publishing gift: $e');
     }
   }
 
-  Future<GiftModel?> fetchGift(String id) async {
-    try {
-      final doc = await _firestore.collection('gifts').doc(id).get();
-      if (doc.exists) {
-        var data = doc.data();
-        return GiftModel(
-          id: id,
-          name: data?['name'],
-          description: data?['description'],
-          category: data?['category'],
-          price: data?['price'],
-          status: data?['status'],
-          dueDate: data?['dueDate'].toDate(),
-          eventID: data?['eventID'],
-          pledgedBy: data?['pledgedBy'],
-          CreatedBy: data?['createdBy'],
-          imageBase64: data?['imageBase64'],
-        );
-      }
-      return null;
-    } catch (e) {
-      throw Exception('Error fetching gift: $e');
+  bool isGiftPublished() {
+    return isPublished;
+  }
+
+  Future<void> deleteGift(String id) async {
+    await SQLiteHelper().deleteData('gifts', id);
+    if (isPublished) {
+      await _firestore.collection('gifts').doc(id).delete();
     }
   }
 
-  Stream<List<GiftModel>> fetchGifts(String eventID) {
-    try {
-      return _firestore
-          .collection('gifts')
-          .where('eventID', isEqualTo: eventID)
-          .snapshots()
-          .map((snapshot) => snapshot.docs
-              .map((doc) => GiftModel(
-                    id: doc.data()['id'],
-                    name: doc.data()['name'],
-                    description: doc.data()['description'],
-                    category: doc.data()['category'],
-                    price: doc.data()['price'],
-                    status: doc.data()['status'],
-                    dueDate: doc.data()['dueDate'].toDate(),
-                    eventID: doc.data()['eventID'],
-                    pledgedBy: doc.data()['pledgedBy'],
-                    CreatedBy: doc.data()['createdBy'],
-                    imageBase64: doc.data()['imageBase64'] ?? '',
-                  ))
-              .toList());
-    } catch (e) {
-      throw Exception('Error fetching gifts: $e');
+  Future<void> updateGiftDetails({
+    required String id,
+    String? name,
+    String? description,
+    String? category,
+    double? price,
+    String? status,
+    DateTime? dueDate,
+    String? pledgedBy,
+    String? imageBase64,
+  }) async {
+    final updatedData = {
+      if (name != null) 'name': name,
+      if (description != null) 'description': description,
+      if (category != null) 'category': category,
+      if (price != null) 'price': price,
+      if (status != null) 'status': status,
+      if (dueDate != null) 'dueDate': dueDate.toIso8601String(),
+      if (pledgedBy != null) 'pledgedBy': pledgedBy,
+      if (imageBase64 != null) 'imageBase64': imageBase64,
+    };
+    await SQLiteHelper().updateData('gifts', id, updatedData);
+    if (isPublished) {
+      await _firestore.collection('gifts').doc(id).update(updatedData);
     }
   }
 
@@ -152,38 +183,66 @@ class GiftModel {
     }
   }
 
-  // updateGiftDetails
-  Future<void> updateGiftDetails({
-    required String id,
-    String? name,
-    String? description,
-    String? category,
-    double? price,
-    String? status,
-    DateTime? dueDate,
-    String? imageBase64,
-  }) async {
-    try {
-      final updateData = <String, dynamic>{};
-      if (name != null) updateData['name'] = name;
-      if (description != null) updateData['description'] = description;
-      if (category != null) updateData['category'] = category;
-      if (price != null) updateData['price'] = price;
-      if (status != null) updateData['status'] = status;
-      if (dueDate != null) updateData['dueDate'] = dueDate;
-      if (imageBase64 != null) updateData['imageBase64'] = imageBase64;
-
-      await _firestore.collection('gifts').doc(id).update(updateData);
-    } catch (e) {
-      throw Exception('Error updating gift: $e');
+  Future<GiftModel?> fetchGift(String id) async {
+    if (_authController.getCurrentUserID() != id) {
+      // fetch from Firestore
+      final doc = await _firestore.collection('gifts').doc(id).get();
+      if (doc.exists) {
+        var data = doc.data();
+        return GiftModel(
+          id: id,
+          name: data?['name'],
+          description: data?['description'],
+          category: data?['category'],
+          price: data?['price'],
+          status: data?['status'],
+          dueDate: DateTime.parse(data?['dueDate']),
+          eventID: data?['eventID'],
+          pledgedBy: data?['pledgedBy'],
+          createdBy: data?['createdBy'],
+          imageBase64: data?['imageBase64'],
+          isPublished: data?['isPublished'] == 1,
+        );
+      }
+    } else {
+      final data = await SQLiteHelper().fetchDataById('gifts', id);
+      if (data != null) {
+        return GiftModel.fromMap(data);
+      }
     }
+    return null;
   }
 
-  Future<void> deleteGift(String id) async {
-    try {
-      await _firestore.collection('gifts').doc(id).delete();
-    } catch (e) {
-      throw Exception('Error deleting gift: $e');
+  Stream<List<GiftModel>> fetchGifts(String eventID, String userID) async* {
+    if (_authController.getCurrentUserID() != userID) {
+      try {
+        yield* _firestore
+            .collection('gifts')
+            .where('eventID', isEqualTo: eventID)
+            .snapshots()
+            .map((snapshot) => snapshot.docs
+                .map((doc) => GiftModel(
+                      id: doc.data()['id'],
+                      name: doc.data()['name'],
+                      description: doc.data()['description'],
+                      category: doc.data()['category'],
+                      price: doc.data()['price'],
+                      status: doc.data()['status'],
+                      dueDate: doc.data()['dueDate'].toDate(),
+                      eventID: doc.data()['eventID'],
+                      pledgedBy: doc.data()['pledgedBy'],
+                      createdBy: doc.data()['createdBy'],
+                      imageBase64: doc.data()['imageBase64'] ?? '',
+                    ))
+                .toList());
+      } catch (e) {
+        throw Exception('Error fetching gifts: $e');
+      }
+    } else {
+      final stream = SQLiteHelper().getStream('gifts', 'eventID', eventID);
+      await for (final data in stream) {
+        yield data.map((map) => GiftModel.fromMap(map)).toList();
+      }
     }
   }
 
@@ -206,7 +265,7 @@ class GiftModel {
           dueDate: data['dueDate'].toDate(),
           eventID: data['eventID'],
           pledgedBy: data['pledgedBy'],
-          CreatedBy: data['createdBy'],
+          createdBy: data['createdBy'],
           imageBase64: data['imageBase64'] ?? '',
         );
       }).toList();

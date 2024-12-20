@@ -25,17 +25,17 @@ class EventController {
     }
   }
 
-  Future<EventModel?> fetchEvent(String eventID) async {
-    try {
-      final event = await _eventModel.fetchEvent(eventID);
-      if (event != null) {
-        return event;
-      }
-    } catch (e) {
-      throw Exception('Error fetching event: $e');
-    }
-    return null;
-  }
+  // Future<EventModel?> fetchEvent(String eventID) async {
+  //   try {
+  //     final event = await _eventModel.fetchEvent(eventID);
+  //     if (event != null) {
+  //       return event;
+  //     }
+  //   } catch (e) {
+  //     throw Exception('Error fetching event: $e');
+  //   }
+  //   return null;
+  // }
 
   Stream<List<EventModel>> fetchUserEvents(String userID) {
     try {
@@ -61,7 +61,7 @@ class EventController {
         date: date,
         location: location,
         description: description,
-        userID: userID,
+        category: category,
       );
     } catch (e) {
       throw Exception('Error updating event: $e');

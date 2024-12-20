@@ -17,7 +17,7 @@ class GiftController {
     String? imageBase64,
   }) async {
     try {
-      await _giftModel.saveGift(
+      await _giftModel.addGift(
         name: name,
         description: description,
         category: category,
@@ -33,17 +33,17 @@ class GiftController {
     }
   }
 
-  Future<GiftModel?> fetchGift(String id) async {
-    try {
-      final gift = await _giftModel.fetchGift(id);
-      if (gift != null) {
-        return gift;
-      }
-    } catch (e) {
-      throw Exception('Error fetching gift: $e');
-    }
-    return null;
-  }
+  // Future<GiftModel?> fetchGift(String id) async {
+  //   try {
+  //     final gift = await _giftModel.fetchGift(id);
+  //     if (gift != null) {
+  //       return gift;
+  //     }
+  //   } catch (e) {
+  //     throw Exception('Error fetching gift: $e');
+  //   }
+  //   return null;
+  // }
 
   Future<void> changeGiftStatus(
       GiftModel giftModel, UserModel? userModel, String status) async {
@@ -82,8 +82,8 @@ class GiftController {
   }
 
   // fetch gifts using stream
-  Stream<List<GiftModel>> fetchGifts(String eventID) {
-    return _giftModel.fetchGifts(eventID);
+  Stream<List<GiftModel>> fetchGifts(String eventID, String userID) {
+    return _giftModel.fetchGifts(eventID, userID);
   }
 
   // get pledgedBy user gifts
