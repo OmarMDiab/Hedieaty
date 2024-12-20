@@ -54,7 +54,7 @@ class EventModel {
       category: map['category'],
       description: map['description'],
       userID: map['userID'],
-      numberOfGifts: map['numberOfGifts'],
+      numberOfGifts: map['numberOfGifts'] ?? 0,
       isPublished: map['isPublished'] == 1,
     );
   }
@@ -83,10 +83,10 @@ class EventModel {
     try {
       final localEvent = await SQLiteHelper().fetchDataById('events', eventId);
       if (localEvent != null) {
+        await SQLiteHelper().updateData('events', eventId, {'isPublished': 1});
         final event = EventModel.fromMap(localEvent);
         await _firestore.collection('events').doc(eventId).set(event.toMap());
         event.isPublished = true;
-        await SQLiteHelper().updateData('events', eventId, {'isPublished': 1});
       }
     } catch (e) {
       throw Exception('Error publishing event: $e');
@@ -144,7 +144,7 @@ class EventModel {
           events.add(EventModel(
             id: doc.id,
             name: data['name'],
-            date: data['date'].toDate(),
+            date: DateTime.parse(data['date']),
             location: data['location'],
             category: data['category'],
             description: data['description'],
@@ -158,15 +158,31 @@ class EventModel {
       // fetch from SQLite database
       return SQLiteHelper()
           .getStream('events', "userID", userID)
-          .asyncMap((snapshot) async {
-        List<EventModel> events = [];
+          .asyncExpand((snapshot) async* {
+        // Create a list to hold the final results
+        List<EventModel> eventList = [];
+
+        // Create a list of futures to fetch gifts for each event concurrently
+        List<Future<void>> futures = [];
+
         for (var data in snapshot) {
-          final gifts = await SQLiteHelper()
-              .fetchByColumn('gifts', 'eventID', data['id']);
-          final numberOfGifts = gifts.length;
-          events.add(EventModel.fromMap(data)..numberOfGifts = numberOfGifts);
+          // Add a future that will process each event and its corresponding gifts
+          futures.add(
+            SQLiteHelper()
+                .fetchByColumn('gifts', 'eventID', data['id'])
+                .then((gifts) {
+              final numberOfGifts = gifts.length;
+              eventList
+                  .add(EventModel.fromMap(data)..numberOfGifts = numberOfGifts);
+            }),
+          );
         }
-        return events;
+
+        // Wait for all futures to complete
+        await Future.wait(futures);
+
+        // Once all the data is fetched, yield the full list
+        yield eventList;
       });
     }
   }

@@ -5,12 +5,14 @@ class EventCard extends StatelessWidget {
   final EventModel event;
   final VoidCallback? onEdit;
   final VoidCallback? onDelete;
+  final VoidCallback? onPublish;
 
   const EventCard({
     super.key,
     required this.event,
     this.onEdit,
     this.onDelete,
+    this.onPublish,
   });
 
   @override
@@ -95,6 +97,19 @@ class EventCard extends StatelessWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
+                      if (onPublish != null)
+                        ElevatedButton.icon(
+                          onPressed: onPublish,
+                          icon: const Icon(Icons.publish, color: Colors.white),
+                          label: const Text('Publish',
+                              style: TextStyle(color: Colors.white)),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.deepPurpleAccent,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12.0),
+                            ),
+                          ),
+                        ),
                       IconButton(
                         icon: const Icon(Icons.edit, color: Colors.blue),
                         onPressed: onEdit,

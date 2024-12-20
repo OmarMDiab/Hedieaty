@@ -83,7 +83,6 @@ class _GiftDetailsScreenState extends State<GiftDetailsScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          // Display image if available
                           if (widget.gift.imageBase64 != null &&
                               widget.gift.imageBase64!.isNotEmpty)
                             Container(
@@ -100,7 +99,6 @@ class _GiftDetailsScreenState extends State<GiftDetailsScreen> {
                                 ),
                               ),
                             ),
-
                           Text(
                             widget.gift.name,
                             style: const TextStyle(

@@ -128,41 +128,48 @@ class _GiftScreenState extends State<GiftScreen> {
                   itemBuilder: (context, index) {
                     final gift = gifts[index];
                     return GiftCard(
-                      gift: gift,
-                      isOwner: widget.isOwner,
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => GiftDetailsScreen(
-                              gift: gift,
-                              userModel: widget.userModel,
-                              isOwner: widget.isOwner,
+                        gift: gift,
+                        isOwner: widget.isOwner,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => GiftDetailsScreen(
+                                gift: gift,
+                                userModel: widget.userModel,
+                                isOwner: widget.isOwner,
+                              ),
                             ),
-                          ),
-                        );
-                      },
-                      onEdit: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => CreateGiftScreen(
-                              eventModel: widget.eventModel,
-                              userModel: widget.userModel,
-                              giftModel: gift,
+                          );
+                        },
+                        onEdit: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => CreateGiftScreen(
+                                eventModel: widget.eventModel,
+                                userModel: widget.userModel,
+                                giftModel: gift,
+                              ),
                             ),
-                          ),
-                        );
-                      },
-                      onDelete: () {
-                        giftController.deleteGift(gift.id);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('gift: ${gift.name} deleted'),
-                          ),
-                        );
-                      },
-                    );
+                          );
+                        },
+                        onDelete: () {
+                          giftController.deleteGift(gift.id);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('gift: ${gift.name} deleted'),
+                            ),
+                          );
+                        },
+                        onPublish: () {
+                          giftController.publishGift(gift.id);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('gift: ${gift.name} published'),
+                            ),
+                          );
+                        });
                   },
                 );
               }

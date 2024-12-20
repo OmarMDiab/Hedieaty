@@ -99,4 +99,13 @@ class GiftController {
       throw Exception('Error deleting gift: $e');
     }
   }
+
+  // publish gift
+  Future<void> publishGift(String id) async {
+    try {
+      await _giftModel.publishGift(id);
+    } catch (e) {
+      throw Exception('Error publishing gift: $e');
+    }
+  }
 }

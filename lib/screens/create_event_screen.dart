@@ -3,6 +3,7 @@ import 'package:hedieaty/models/user_model.dart';
 import 'package:hedieaty/controllers/event_controller.dart';
 import 'package:hedieaty/widgets/CustomTextField.dart';
 import 'package:hedieaty/models/event_model.dart';
+import 'package:intl/intl.dart';
 
 // import 'package:permission_handler/permission_handler.dart';
 // import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -90,11 +91,13 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
         );
       } else {
         // Update existing event
+        final DateFormat dateFormat = DateFormat('dd/MM/yyyy');
+        final DateTime eventDate = dateFormat.parse(_eventDateController.text);
         EventController().updateEvent(
           eventID: widget.eventModel!.id,
           name: _eventNameController.text,
           description: _eventDescriptionController.text,
-          date: DateTime.parse(_eventDateController.text),
+          date: eventDate,
           location: _locationController.text,
           category: _selectedCategory!,
         );

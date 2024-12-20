@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+//import 'package:hedieaty/services/sqlite_helper.dart';
 import 'screens/login_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
@@ -18,6 +19,7 @@ Future<void> main() async {
   if (Platform.isIOS) {
     await messaging.requestPermission();
   }
+  //await SQLiteHelper().deleteDatabaseFile();
   runApp(
     const OverlaySupport.global(
       child: MyApp(),

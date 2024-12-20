@@ -32,7 +32,7 @@ class GiftModel {
     this.eventID = '',
     this.pledgedBy = '',
     this.createdBy = '',
-    this.imageBase64,
+    this.imageBase64 = '',
     this.isPublished = false,
   }) : dueDate = dueDate ?? DateTime.now();
 
@@ -97,17 +97,18 @@ class GiftModel {
     await SQLiteHelper().insertData('gifts', gift.toMap());
   }
 
-  Future<void> publishGift() async {
+  Future<void> publishGift(String id) async {
     try {
+      await SQLiteHelper().updateData('gifts', id, {'isPublished': 1});
       await _firestore.collection('gifts').doc(id).set(toMap());
       isPublished = true;
-      await SQLiteHelper().updateData('gifts', id, {'isPublished': 1});
     } catch (e) {
       throw Exception('Error publishing gift: $e');
     }
   }
 
   bool isGiftPublished() {
+    // from sqlite
     return isPublished;
   }
 
@@ -183,36 +184,6 @@ class GiftModel {
     }
   }
 
-  Future<GiftModel?> fetchGift(String id) async {
-    if (_authController.getCurrentUserID() != id) {
-      // fetch from Firestore
-      final doc = await _firestore.collection('gifts').doc(id).get();
-      if (doc.exists) {
-        var data = doc.data();
-        return GiftModel(
-          id: id,
-          name: data?['name'],
-          description: data?['description'],
-          category: data?['category'],
-          price: data?['price'],
-          status: data?['status'],
-          dueDate: DateTime.parse(data?['dueDate']),
-          eventID: data?['eventID'],
-          pledgedBy: data?['pledgedBy'],
-          createdBy: data?['createdBy'],
-          imageBase64: data?['imageBase64'],
-          isPublished: data?['isPublished'] == 1,
-        );
-      }
-    } else {
-      final data = await SQLiteHelper().fetchDataById('gifts', id);
-      if (data != null) {
-        return GiftModel.fromMap(data);
-      }
-    }
-    return null;
-  }
-
   Stream<List<GiftModel>> fetchGifts(String eventID, String userID) async* {
     if (_authController.getCurrentUserID() != userID) {
       try {
@@ -230,7 +201,7 @@ class GiftModel {
                       status: doc.data()['status'],
                       dueDate: doc.data()['dueDate'].toDate(),
                       eventID: doc.data()['eventID'],
-                      pledgedBy: doc.data()['pledgedBy'],
+                      pledgedBy: doc.data()['pledgedBy'] ?? '',
                       createdBy: doc.data()['createdBy'],
                       imageBase64: doc.data()['imageBase64'] ?? '',
                     ))

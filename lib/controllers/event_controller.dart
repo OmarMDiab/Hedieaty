@@ -25,18 +25,6 @@ class EventController {
     }
   }
 
-  // Future<EventModel?> fetchEvent(String eventID) async {
-  //   try {
-  //     final event = await _eventModel.fetchEvent(eventID);
-  //     if (event != null) {
-  //       return event;
-  //     }
-  //   } catch (e) {
-  //     throw Exception('Error fetching event: $e');
-  //   }
-  //   return null;
-  // }
-
   Stream<List<EventModel>> fetchUserEvents(String userID) {
     try {
       return _eventModel.fetchUserEvents(userID);
@@ -73,6 +61,14 @@ class EventController {
       await _eventModel.deleteEvent(id);
     } catch (e) {
       throw Exception('Error deleting event: $e');
+    }
+  }
+
+  Future<void> publishEvent(String eventId) async {
+    try {
+      await _eventModel.publishEvent(eventId);
+    } catch (e) {
+      throw Exception('Error publishing event: $e');
     }
   }
 }

@@ -237,6 +237,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
           content: CustomTextField(
+            key: const Key('friendPhoneField'),
             controller: searchController,
             labelText: 'Friend phone',
             icon: Icons.phone,
@@ -253,6 +254,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             ElevatedButton(
+              key: const Key('addFriendButton'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.green,
                 shape: RoundedRectangleBorder(

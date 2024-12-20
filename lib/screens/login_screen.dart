@@ -87,6 +87,7 @@ class LoginScreen extends StatelessWidget {
               const SizedBox(height: 40),
               // Email TextField
               CustomTextField(
+                key: const Key('emailField'),
                 controller: emailController,
                 labelText: 'Email',
                 icon: Icons.email,
@@ -94,6 +95,7 @@ class LoginScreen extends StatelessWidget {
 
               // Password TextField
               CustomTextField(
+                key: const Key('passwordField'),
                 controller: passwordController,
                 labelText: 'Password',
                 icon: Icons.lock,
@@ -104,6 +106,7 @@ class LoginScreen extends StatelessWidget {
 
               // Login Button
               ElevatedButton(
+                key: const Key('loginButton'),
                 onPressed: () => _login(context),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.deepPurpleAccent,

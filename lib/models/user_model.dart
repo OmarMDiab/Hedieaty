@@ -1,9 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-//import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:hedieaty/services/sqlite_helper.dart';
+import 'dart:convert';
 
 class UserModel {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-
+  final sqliteHelper = SQLiteHelper();
   final String id;
   final String pfp;
   final String name;
@@ -33,10 +34,16 @@ class UserModel {
     required String name,
     required String email,
     required phoneNumber,
-    required List<String> preferences,
+    List<String>? preferences,
     String? deviceToken,
   }) async {
     try {
+      String? preferencesJson =
+          preferences != null ? jsonEncode(preferences) : null;
+
+      await sqliteHelper.insertUser(
+          id, name, pfp, email, phoneNumber, preferencesJson, deviceToken);
+
       await _firestore.collection('users').doc(id).set({
         'id': id,
         'pfp': pfp,
@@ -70,6 +77,12 @@ class UserModel {
       if (phoneNumber != null) updateData['phoneNumber'] = phoneNumber;
       if (preferences != null) updateData['preferences'] = preferences;
       if (deviceToken != null) updateData['deviceToken'] = deviceToken;
+
+      var preferencesJson =
+          preferences != null ? jsonEncode(preferences) : null;
+
+      await sqliteHelper.updateUser(
+          id, name, pfp, email, phoneNumber, preferencesJson, deviceToken);
 
       await _firestore.collection('users').doc(id).update(updateData);
     } catch (e) {

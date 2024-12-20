@@ -131,6 +131,9 @@ class _EventScreenState extends State<EventScreen> {
                         onDelete: widget.isOwner
                             ? () => _deleteEvent(context, event)
                             : null,
+                        onPublish: widget.isOwner && event.isPublished == false
+                            ? () => _publishEvent(context, event)
+                            : null,
                       ),
                     );
                   },
@@ -195,5 +198,12 @@ class _EventScreenState extends State<EventScreen> {
         const SnackBar(content: Text('Event deleted successfully!')),
       );
     }
+  }
+
+  void _publishEvent(BuildContext context, EventModel event) async {
+    await _eventController.publishEvent(event.id);
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Event published successfully!')),
+    );
   }
 }
