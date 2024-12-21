@@ -90,7 +90,7 @@ class GiftCard extends StatelessWidget {
                 : null,
           ),
         ),
-        if (!gift.isPublished)
+        if (!gift.isPublished && isOwner)
           ElevatedButton.icon(
             onPressed: onPublish,
             icon: const Icon(Icons.publish, color: Colors.white),

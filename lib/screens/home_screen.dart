@@ -173,6 +173,7 @@ class _HomeScreenState extends State<HomeScreen> {
               width: 50, // Custom width
               height: 50, // Custom height
               child: FloatingActionButton(
+                key: const Key('addFriendFloatingButton'),
                 backgroundColor: const Color.fromARGB(255, 67, 25, 184),
                 onPressed: () {
                   _showSearchDialog(context, searchController);

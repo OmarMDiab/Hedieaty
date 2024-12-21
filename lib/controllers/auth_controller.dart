@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:hedieaty/services/sqlite_helper.dart';
 import '../controllers/user_controller.dart';
 import '../models/user_model.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -50,7 +51,9 @@ class AuthController {
         final String? deviceToken = await messaging.getToken();
         await _userController.updateUserDeviceToken(
             user.uid, deviceToken); // Update device token
-        return await _userController.fetchUser(user.uid); // Fetch user data
+        await SQLiteHelper().syncDataAfterLogin(user.uid);
+        return await _userController.fetchUser(user.uid);
+        // Fetch user data
       }
     } catch (e) {
       throw Exception('Error logging in: $e');

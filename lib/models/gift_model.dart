@@ -99,17 +99,17 @@ class GiftModel {
 
   Future<void> publishGift(String id) async {
     try {
-      await SQLiteHelper().updateData('gifts', id, {'isPublished': 1});
-      await _firestore.collection('gifts').doc(id).set(toMap());
-      isPublished = true;
+      final localgift = await SQLiteHelper().fetchDataById('gifts', id);
+      if (localgift != null) {
+        await SQLiteHelper().updateData('gifts', id, {'isPublished': 1});
+        final gift = GiftModel.fromMap(localgift);
+        gift.isPublished = true;
+        await _firestore.collection('gifts').doc(id).set(gift.toMap());
+        isPublished = true;
+      }
     } catch (e) {
       throw Exception('Error publishing gift: $e');
     }
-  }
-
-  bool isGiftPublished() {
-    // from sqlite
-    return isPublished;
   }
 
   Future<void> deleteGift(String id) async {
@@ -140,8 +140,10 @@ class GiftModel {
       if (pledgedBy != null) 'pledgedBy': pledgedBy,
       if (imageBase64 != null) 'imageBase64': imageBase64,
     };
+    final localgift = await SQLiteHelper().fetchDataById('gifts', id);
+    final gift = GiftModel.fromMap(localgift!);
     await SQLiteHelper().updateData('gifts', id, updatedData);
-    if (isPublished) {
+    if (gift.isPublished) {
       await _firestore.collection('gifts').doc(id).update(updatedData);
     }
   }
@@ -199,7 +201,7 @@ class GiftModel {
                       category: doc.data()['category'],
                       price: doc.data()['price'],
                       status: doc.data()['status'],
-                      dueDate: doc.data()['dueDate'].toDate(),
+                      dueDate: DateTime.parse(doc.data()['dueDate']),
                       eventID: doc.data()['eventID'],
                       pledgedBy: doc.data()['pledgedBy'] ?? '',
                       createdBy: doc.data()['createdBy'],
@@ -226,6 +228,19 @@ class GiftModel {
 
       return querySnapshot.docs.map((doc) {
         var data = doc.data();
+
+        // Handle the dueDate field type
+        DateTime dueDate;
+        if (data['dueDate'] is Timestamp) {
+          // Convert Firestore Timestamp to DateTime
+          dueDate = (data['dueDate'] as Timestamp).toDate();
+        } else if (data['dueDate'] is String) {
+          // Parse ISO 8601 string to DateTime
+          dueDate = DateTime.parse(data['dueDate']);
+        } else {
+          throw Exception('Invalid dueDate format: ${data['dueDate']}');
+        }
+
         return GiftModel(
           id: data['id'],
           name: data['name'],
@@ -233,7 +248,7 @@ class GiftModel {
           category: data['category'],
           price: data['price'],
           status: data['status'],
-          dueDate: data['dueDate'].toDate(),
+          dueDate: dueDate, // Assign the parsed DateTime
           eventID: data['eventID'],
           pledgedBy: data['pledgedBy'],
           createdBy: data['createdBy'],

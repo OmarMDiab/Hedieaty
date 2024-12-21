@@ -1,5 +1,7 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 
@@ -260,5 +262,152 @@ class SQLiteHelper {
     } catch (e) {
       print('Error deleting database file: $e');
     }
+  }
+
+  // firestore Sync
+
+  Future<void> syncEvents(Database db, String userID) async {
+    final firestore = FirebaseFirestore.instance;
+
+    try {
+      QuerySnapshot<Map<String, dynamic>> snapshot = await firestore
+          .collection('events')
+          .where('userID', isEqualTo: userID)
+          .get();
+
+      await db.transaction((txn) async {
+        for (var doc in snapshot.docs) {
+          var data = doc.data();
+          var result = await txn.query(
+            'events',
+            where: 'id = ?',
+            whereArgs: [doc.id],
+          );
+
+          if (result.isEmpty) {
+            await txn.insert('events', {
+              'id': doc.id,
+              ...data,
+            });
+          } else {
+            await txn.update(
+              'events',
+              data,
+              where: 'id = ?',
+              whereArgs: [doc.id],
+            );
+          }
+        }
+      });
+
+      print("Events synced successfully.");
+    } catch (e) {
+      print("Error syncing events: $e");
+    }
+  }
+
+  Future<void> syncGifts(Database db, String userID) async {
+    final firestore = FirebaseFirestore.instance;
+
+    try {
+      // Step 1: Get all eventIDs for the logged-in user from Firestore
+      QuerySnapshot<Map<String, dynamic>> eventSnapshot = await firestore
+          .collection('events')
+          .where('userID', isEqualTo: userID)
+          .get();
+
+      List<String> eventIDs = eventSnapshot.docs.map((doc) => doc.id).toList();
+
+      // Step 2: Fetch gifts for each eventID
+      for (String eventID in eventIDs) {
+        QuerySnapshot<Map<String, dynamic>> giftSnapshot = await firestore
+            .collection('gifts')
+            .where('eventID', isEqualTo: eventID)
+            .get();
+
+        // Step 3: Sync gifts with SQLite
+        await db.transaction((txn) async {
+          for (var doc in giftSnapshot.docs) {
+            var data = doc.data();
+            var result = await txn.query(
+              'gifts',
+              where: 'id = ?',
+              whereArgs: [doc.id],
+            );
+
+            if (result.isEmpty) {
+              // Insert new gift record
+              await txn.insert('gifts', {
+                'id': doc.id,
+                ...data,
+              });
+            } else {
+              // Update existing gift record
+              await txn.update(
+                'gifts',
+                data,
+                where: 'id = ?',
+                whereArgs: [doc.id],
+              );
+            }
+          }
+        });
+      }
+
+      print("Gifts synced successfully.");
+    } catch (e) {
+      print("Error syncing gifts: $e");
+    }
+  }
+
+  Future<void> syncUsers(Database db, String userID) async {
+    final firestore = FirebaseFirestore.instance;
+
+    try {
+      DocumentSnapshot<Map<String, dynamic>> doc =
+          await firestore.collection('users').doc(userID).get();
+
+      if (doc.exists) {
+        var data = doc.data()!;
+
+        // Convert unsupported types to JSON strings
+        data['preferences'] = data['preferences'] != null
+            ? jsonEncode(data['preferences'])
+            : null;
+
+        // Insert or replace user data in SQLite
+        await db.insert(
+          'users',
+          {
+            'id': userID,
+            'pfp': data['pfp'],
+            'name': data['name'],
+            'email': data['email'],
+            'phoneNumber': data['phoneNumber'],
+            'preferences': data['preferences'],
+            'deviceToken': data['deviceToken'],
+          },
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+
+        print("User data synced successfully.");
+      }
+    } catch (e) {
+      print("Error syncing user data: $e");
+    }
+  }
+
+  Future<void> syncDataAfterLogin(String userID) async {
+    // Access the SQLite database instance
+    final db = await SQLiteHelper().database;
+
+    // Sync Events
+    await syncEvents(db, userID);
+
+    // Sync Gifts (based on events)
+    await syncGifts(db, userID);
+
+    // Sync User Data
+    await syncUsers(db, userID);
   }
 }

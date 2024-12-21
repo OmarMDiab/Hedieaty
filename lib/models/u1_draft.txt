@@ -1,10 +1,11 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:hedieaty/services/sqlite_helper.dart';
 import 'dart:convert';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:http/http.dart' as http;
+import 'package:firebase_messaging/firebase_messaging.dart';
 
 class UserModel {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final sqliteHelper = SQLiteHelper();
+
   final String id;
   final String pfp;
   final String name;
@@ -13,7 +14,6 @@ class UserModel {
   final int numberOfEvents;
   final List<String> friends;
   final List<String> preferences;
-  final String? deviceToken;
 
   // Default constructor with optional parameters
   UserModel({
@@ -25,7 +25,6 @@ class UserModel {
     this.friends = const [],
     this.numberOfEvents = 0,
     this.preferences = const [],
-    this.deviceToken = '',
   });
 
   Future<void> saveUser({
@@ -33,17 +32,11 @@ class UserModel {
     required String pfp,
     required String name,
     required String email,
-    required phoneNumber,
-    List<String>? preferences,
-    String? deviceToken,
+    required String phoneNumber,
+    required List<String> preferences,
   }) async {
     try {
-      String? preferencesJson =
-          preferences != null ? jsonEncode(preferences) : null;
-
-      await sqliteHelper.insertUser(
-          id, name, pfp, email, phoneNumber, preferencesJson, deviceToken);
-
+      final fcmToken = await FirebaseMessaging.instance.getToken();
       await _firestore.collection('users').doc(id).set({
         'id': id,
         'pfp': pfp,
@@ -52,14 +45,13 @@ class UserModel {
         'phoneNumber': phoneNumber,
         'friends': [],
         'preferences': preferences,
-        'deviceToken': deviceToken,
+        'fcmToken': fcmToken, // Save FCM Token
       });
     } catch (e) {
       throw Exception('Error saving user: $e');
     }
   }
 
-  // update user
   Future<void> updateUser({
     required String id,
     String? pfp,
@@ -67,7 +59,7 @@ class UserModel {
     String? email,
     String? phoneNumber,
     List<String>? preferences,
-    String? deviceToken,
+    String? fcmToken, // Optional FCM Token
   }) async {
     try {
       Map<String, dynamic> updateData = {};
@@ -76,13 +68,8 @@ class UserModel {
       if (email != null) updateData['email'] = email;
       if (phoneNumber != null) updateData['phoneNumber'] = phoneNumber;
       if (preferences != null) updateData['preferences'] = preferences;
-      if (deviceToken != null) updateData['deviceToken'] = deviceToken;
-
-      var preferencesJson =
-          preferences != null ? jsonEncode(preferences) : null;
-
-      await sqliteHelper.updateUser(
-          id, name, pfp, email, phoneNumber, preferencesJson, deviceToken);
+      if (fcmToken != null)
+        updateData['fcmToken'] = fcmToken; // Update FCM Token
 
       await _firestore.collection('users').doc(id).update(updateData);
     } catch (e) {
@@ -95,11 +82,10 @@ class UserModel {
     String? email,
     String? phoneNumber,
     String? pfp,
-    //preferences
     List<String>? preferences,
   }) {
     return UserModel(
-      id: id, // Keep ID the same as it's usually immutable
+      id: id,
       name: name ?? this.name,
       email: email ?? this.email,
       phoneNumber: phoneNumber ?? this.phoneNumber,
@@ -113,13 +99,13 @@ class UserModel {
       final doc = await _firestore.collection('users').doc(id).get();
 
       if (doc.exists) {
-        // for friends cards
         final eventdocs = await _firestore
             .collection('events')
             .where('userID', isEqualTo: id)
+            .where('date', isGreaterThan: Timestamp.fromDate(DateTime.now()))
             .get();
 
-        final numberOfEvents = eventdocs.docs.length; // get numeber of events
+        final numberOfEvents = eventdocs.docs.length;
         var userData = doc.data();
         return UserModel(
           id: id,
@@ -130,7 +116,6 @@ class UserModel {
           numberOfEvents: numberOfEvents,
           friends: List<String>.from(userData?['friends'] ?? []),
           preferences: List<String>.from(userData?['preferences'] ?? []),
-          deviceToken: userData?['deviceToken'],
         );
       }
       return null;
@@ -139,7 +124,7 @@ class UserModel {
     }
   }
 
-  Future<String?> addFriend({
+  Future<bool> addFriend({
     required String userID,
     required String phoneNumber,
   }) async {
@@ -152,10 +137,10 @@ class UserModel {
           .get();
 
       if (querySnapshot.docs.isEmpty) {
-        return null;
+        return false;
       }
 
-      // >>> phone numbers are unique and we get only one document
+      // Phone numbers are unique, so get the first document
       friendID = querySnapshot.docs.first.id;
 
       final userDocRef = _firestore.collection('users').doc(userID);
@@ -183,11 +168,24 @@ class UserModel {
           'friends': [userID],
         });
       }
-      final String? friendDeviceToken = friendDoc.data()?['deviceToken'];
 
-      return friendDeviceToken;
+      // Send a notification to the added friend
+      if (friendDoc.exists) {
+        final friendData = friendDoc.data();
+        final friendToken = friendData?['fcmToken'];
+
+        if (friendToken != null) {
+          await _sendNotificationToFriend(
+            token: friendToken,
+            title: 'New Friend Added',
+            body: '${userDoc.data()?['name']} added you as a friend!',
+          );
+        }
+      }
+
+      return true;
     } catch (e) {
-      throw Exception('Error adding Friend: $e');
+      throw Exception('Error adding friend: $e');
     }
   }
 
@@ -212,14 +210,52 @@ class UserModel {
     }
   }
 
-  // update user device token
-  Future<void> updateFCMToken(String id, String? deviceToken) async {
+  // update fcm token
+  Future<void> updateFCMToken(String id) async {
     try {
+      final fcmToken = await FirebaseMessaging.instance.getToken();
       await _firestore.collection('users').doc(id).update({
-        'deviceToken': deviceToken,
+        'fcmToken': fcmToken,
       });
     } catch (e) {
-      throw Exception('Error updating user device token: $e');
+      throw Exception('Error updating FCM token: $e');
+    }
+  }
+
+  Future<void> _sendNotificationToFriend({
+    required String token,
+    required String title,
+    required String body,
+  }) async {
+    const String serverKey = 'YOUR_FCM_SERVER_KEY';
+
+    final url = Uri.parse('https://fcm.googleapis.com/fcm/send');
+    final headers = {
+      'Content-Type': 'application/json',
+      'Authorization': 'key=$serverKey',
+    };
+
+    final payload = {
+      'to': token,
+      'notification': {
+        'title': title,
+        'body': body,
+        'click_action': 'FLUTTER_NOTIFICATION_CLICK',
+      },
+    };
+
+    try {
+      final response = await http.post(
+        url,
+        headers: headers,
+        body: json.encode(payload),
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception('Failed to send notification');
+      }
+    } catch (e) {
+      throw Exception('Error sending notification: $e');
     }
   }
 }

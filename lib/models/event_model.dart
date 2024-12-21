@@ -85,21 +85,19 @@ class EventModel {
       if (localEvent != null) {
         await SQLiteHelper().updateData('events', eventId, {'isPublished': 1});
         final event = EventModel.fromMap(localEvent);
-        await _firestore.collection('events').doc(eventId).set(event.toMap());
         event.isPublished = true;
+        await _firestore.collection('events').doc(eventId).set(event.toMap());
       }
     } catch (e) {
       throw Exception('Error publishing event: $e');
     }
   }
 
-  bool isEventPublished() {
-    return isPublished;
-  }
-
   Future<void> deleteEvent(String eventId) async {
+    final localEvent = await SQLiteHelper().fetchDataById('events', eventId);
+    final event = EventModel.fromMap(localEvent!);
     await SQLiteHelper().deleteData('events', eventId);
-    if (isPublished) {
+    if (event.isPublished) {
       await _firestore.collection('events').doc(eventId).delete();
     }
   }
@@ -119,8 +117,10 @@ class EventModel {
       if (category != null) 'category': category,
       if (description != null) 'description': description,
     };
+    final localEvent = await SQLiteHelper().fetchDataById('events', id);
+    final event = EventModel.fromMap(localEvent!);
     await SQLiteHelper().updateData('events', id, updatedData);
-    if (isPublished) {
+    if (event.isPublished) {
       await _firestore.collection('events').doc(id).update(updatedData);
     }
   }
@@ -185,24 +185,5 @@ class EventModel {
         yield eventList;
       });
     }
-  }
-
-  Future<EventModel?> fetchEvent(String eventId) async {
-    if (_authController.getCurrentUserID() != userID) {
-      final doc = await _firestore.collection('events').doc(eventId).get();
-      if (doc.exists) {
-        final data = doc.data();
-        if (data != null) {
-          return EventModel.fromMap(data);
-        }
-        return null;
-      }
-    } else {
-      final localEvent = await SQLiteHelper().fetchDataById('events', eventId);
-      if (localEvent != null) {
-        return EventModel.fromMap(localEvent);
-      }
-    }
-    return null;
   }
 }
