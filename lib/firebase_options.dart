@@ -51,18 +51,20 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyCR9cQN3csB_N3sRcDp659TB7ZaMyk1lWo',
-    appId: '1:805519010074:android:210e06e15d3f62040124a3',
+    appId: '1:805519010074:android:573ffef014b43bb30124a3',
     messagingSenderId: '805519010074',
     projectId: 'hedieaty-dc62b',
+    databaseURL: 'https://hedieaty-dc62b-default-rtdb.firebaseio.com',
     storageBucket: 'hedieaty-dc62b.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyA6Vs9juOlhyzdoHF25TH3jw3l_TlJ77ts',
-    appId: '1:805519010074:ios:4dc82f6d63d6ed4f0124a3',
+    appId: '1:805519010074:ios:0a78332643e82f8d0124a3',
     messagingSenderId: '805519010074',
     projectId: 'hedieaty-dc62b',
+    databaseURL: 'https://hedieaty-dc62b-default-rtdb.firebaseio.com',
     storageBucket: 'hedieaty-dc62b.firebasestorage.app',
-    iosBundleId: 'com.example.hedieaty',
+    iosBundleId: 'com.omardiab.hedieaty',
   );
 }

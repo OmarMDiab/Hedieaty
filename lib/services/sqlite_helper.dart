@@ -149,7 +149,9 @@ class SQLiteHelper {
       );
 
       // Only add the data to the stream if it has changed
-      if (lastData == null || !_dataEquals(lastData!, results)) {
+      if (lastData == null ||
+          !_dataEquals(lastData!, results) ||
+          table == 'events') {
         lastData = results; // Update the last data
         if (!controller.isClosed) {
           controller.add(results); // Add data to the stream
